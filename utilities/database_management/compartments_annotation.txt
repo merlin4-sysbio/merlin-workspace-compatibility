@@ -1,0 +1,3 @@
+compartments_annotation_reports_has_compartments
+compartments_annotation_reports
+compartments_annotation_compartments
