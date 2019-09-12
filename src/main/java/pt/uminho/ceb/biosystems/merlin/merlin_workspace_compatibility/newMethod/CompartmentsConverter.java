@@ -26,8 +26,17 @@ public class CompartmentsConverter {
 			
 			while(rs.next()) {
 				
-				String query = "INSERT INTO compartments_annotation_reports VALUES (" + rs.getInt(1) + ", '" + 
-				DatabaseUtilities.databaseStrConverter(rs.getString(4), newConnection.getDatabase_type()) + "', '" + rs.getString(3) + "');";
+				String date = null;
+				String locus = null;
+				
+				if(rs.getString(4) != null)
+					date = "'" + DatabaseUtilities.databaseStrConverter(rs.getString(4), newConnection.getDatabase_type()) + "'";
+				
+				if(rs.getString(3) != null)
+					locus = "'" + DatabaseUtilities.databaseStrConverter(rs.getString(2), newConnection.getDatabase_type()) + "'";
+				
+				String query = "INSERT INTO compartments_annotation_reports VALUES (" + rs.getInt(1) + ", " + 
+				date + ", " + locus + ");";
 				
 				newStatement.execute(query);
 			}

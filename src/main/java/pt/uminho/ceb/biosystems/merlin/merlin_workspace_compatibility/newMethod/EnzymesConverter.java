@@ -45,8 +45,8 @@ public class EnzymesConverter {
 					Integer sequenceId = rs.getInt(1);
 					
 					newStatement.execute("INSERT INTO enzymes_annotation_geneHomology (skey, homologySetup_s_key, locusTag, query, gene, chromosome, organelle, uniprot_star, status, uniprot_ecnumber, model_sequence_idsequence) VALUES ("
-							+ rs.getInt(1) + ", " + rs.getInt(2) + ", '" + str(rs.getString(3), type) + "', '" + str(rs.getString(4), type) + "', '" + str(rs.getString(5), type) + "', '" + str(rs.getString(6), type) +
-							"', '" + str(rs.getString(7), type) + "', '" + str(rs.getString(8), type) + "', '" + str(rs.getString(9), type) + "', '" + str(rs.getString(10), type) + "', " + sequenceId +");");
+							+ rs.getInt(1) + ", " + rs.getInt(2) + ", " + str(rs.getString(3), type) + ", " + str(rs.getString(4), type) + ", " + str(rs.getString(5), type) + ", " + str(rs.getString(6), type) +
+							", " + str(rs.getString(7), type) + ", " + str(rs.getString(8), type) + ", " + str(rs.getString(9), type) + ", " + str(rs.getString(10), type) + ", " + sequenceId +");");
 					
 				}
 				
@@ -71,7 +71,7 @@ public class EnzymesConverter {
 		if(word == null)
 			return null;
 		
-		return DatabaseUtilities.databaseStrConverter(word, type);
+		return "'" + DatabaseUtilities.databaseStrConverter(word, type) + "'";
 		
 	}
 }

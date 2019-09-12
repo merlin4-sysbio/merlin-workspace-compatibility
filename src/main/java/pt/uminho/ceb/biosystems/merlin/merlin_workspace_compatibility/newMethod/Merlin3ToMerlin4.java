@@ -46,7 +46,7 @@ public class Merlin3ToMerlin4 {
 
 		logger.info("reading projects table...");
 
-		//		convertProjects();
+		convertProjects();
 
 		logger.info("reading compartments tables...");
 
@@ -206,13 +206,6 @@ public class Merlin3ToMerlin4 {
 
 					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
 				}
-				else if(newTable.equalsIgnoreCase("model_pathway_has_enzyme")) {
-					positions.add(2);
-					positions.add(3);
-					positions.add(1);
-
-					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
-				}
 				else if(newTable.equalsIgnoreCase("model_pathway_has_reaction")) {
 					positions.add(2);
 					positions.add(1);
@@ -237,21 +230,6 @@ public class Merlin3ToMerlin4 {
 					positions.add(1);
 					positions.add(3);
 					positions.add(2);
-
-					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
-				}
-				else if(newTable.equalsIgnoreCase("model_enzyme")) { //to ignore column 5
-					positions.add(1);
-					positions.add(2);
-					positions.add(3);
-					positions.add(4);
-
-					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
-				}
-				else if(newTable.equalsIgnoreCase("model_reaction_has_enzyme")) {
-					positions.add(2);
-					positions.add(3);
-					positions.add(1);
 
 					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
 				}
@@ -302,19 +280,6 @@ public class Merlin3ToMerlin4 {
 
 					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
 				}
-				else if(newTable.equalsIgnoreCase("model_protein")) {
-					positions.add(1);
-					positions.add(3);
-					positions.add(4);
-					positions.add(5);
-					positions.add(6);
-					positions.add(7);
-					positions.add(8);
-					positions.add(2);
-					positions.add(9);
-
-					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
-				}
 				else if(newTable.equalsIgnoreCase("model_compound")) {
 					positions.add(1);
 					positions.add(9);
@@ -338,6 +303,23 @@ public class Merlin3ToMerlin4 {
 
 
 					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
+				}
+				else if(newTable.equalsIgnoreCase("model_reaction_has_model_protein")) {
+//					positions.add(2);
+					positions.add(3);
+					positions.add(1);
+
+					genericDataRetrieverAndInjectionRespectingOrder("reaction_has_enzyme", newTable, positions);
+				}
+				else if(newTable.equalsIgnoreCase("model_protein")) {
+					ModelConverter.protein(this.oldConnection, this.newConnection);
+				}
+				else if(newTable.equalsIgnoreCase("model_pathway_model_protein")) {
+//					positions.add(2);
+					positions.add(3);
+					positions.add(1);
+
+					genericDataRetrieverAndInjectionRespectingOrder("pathway_has_enzyme", newTable, positions);
 				}
 				else if(newTable.equalsIgnoreCase("model_subunit")) {
 					ModelConverter.subunit(this.oldConnection, this.newConnection);
