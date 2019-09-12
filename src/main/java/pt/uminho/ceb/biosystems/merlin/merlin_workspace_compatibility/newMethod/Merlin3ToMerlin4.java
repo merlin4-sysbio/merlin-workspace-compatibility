@@ -8,9 +8,15 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import es.uvigo.ei.aibench.workbench.Workbench;
 import jersey.repackaged.com.google.common.collect.Lists;
+import pt.uminho.ceb.biosystems.merlin.aibench.operations.transporters.transyt.IntegrateTransportersDataTransyt;
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Connection;
+import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.DatabaseUtilities;
+import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Enumerators.DatabaseType;
 import pt.uminho.ceb.biosystems.merlin.utilities.DatabaseFilesPaths;
 import pt.uminho.ceb.biosystems.merlin.utilities.io.FileUtils;
 
@@ -23,6 +29,8 @@ public class Merlin3ToMerlin4 {
 	List<String> interproTables;
 	List<String> modelTables;
 
+	private static final Logger logger = LoggerFactory.getLogger(Merlin3ToMerlin4.class);
+
 	public Merlin3ToMerlin4(Connection oldConnection, Connection newConnection) {
 
 		this.oldConnection = oldConnection;
@@ -32,16 +40,28 @@ public class Merlin3ToMerlin4 {
 
 	public void start() throws IOException {
 
+		logger.info("reading tables names...");
+
 		readTablesNames();
 
-		genericDataRetrieverAndInjection("projects", "projects");
+		logger.info("reading projects table...");
+
+		//		convertProjects();
+
+		logger.info("reading compartments tables...");
 
 		convertCompartments();
 
+		logger.info("reading interpro tables...");
+
 		convertInterpro();
 
+		logger.info("reading model tables...");
+
 		convertModel();
-		
+
+		logger.info("reading enzymes tables...");
+
 		convertEnzymes();
 	}
 
@@ -66,23 +86,42 @@ public class Merlin3ToMerlin4 {
 	}
 
 	/**
+	 * Convertion of projects table
+	 */
+	public void convertProjects() {
+
+		List<Integer> positions = new ArrayList<Integer>();
+
+		positions.add(1);
+		positions.add(8);
+		positions.add(4);
+		positions.add(3);
+		positions.add(2);
+		positions.add(7);
+		positions.add(6);
+		positions.add(5);
+
+		genericDataRetrieverAndInjectionRespectingOrder("projects", "projects", positions);
+	}
+
+	/**
 	 * Convertion of compartments_annotation tables
 	 */
 	public void convertCompartments() {
 
 		for(String newTable : this.compartmentsTables) {
-			
+
 			List<Integer> positions = new ArrayList<Integer>();
 
 			if(newTable.equalsIgnoreCase("compartments_annotation_reports"))
 				CompartmentsConverter.psort_reports(this.oldConnection, this.newConnection);
 
 			else if(newTable.equalsIgnoreCase("compartments_annotation_reports_has_compartments")){
-					positions.add(2);
-					positions.add(1);
-					positions.add(3);
+				positions.add(2);
+				positions.add(1);
+				positions.add(3);
 
-					genericDataRetrieverAndInjectionRespectingOrder("psort_reports_has_compartments", newTable, positions);
+				genericDataRetrieverAndInjectionRespectingOrder("psort_reports_has_compartments", newTable, positions);
 			}
 			else if(newTable.equalsIgnoreCase("compartments_annotation_compartments")){
 				positions.add(1);
@@ -112,14 +151,14 @@ public class Merlin3ToMerlin4 {
 
 				if(newTable.equalsIgnoreCase("model_gene")) {
 					positions.add(1);
-					positions.add(3);
-					positions.add(4);
-					positions.add(5);
-					positions.add(6);
 					positions.add(7);
+					positions.add(5);
+					positions.add(3);
+					positions.add(2);
 					positions.add(8);
 					positions.add(9);
-					positions.add(10);
+					positions.add(6);
+					positions.add(4);
 
 					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
 				}
@@ -273,7 +312,7 @@ public class Merlin3ToMerlin4 {
 					positions.add(8);
 					positions.add(2);
 					positions.add(9);
-					
+
 					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
 				}
 				else if(newTable.equalsIgnoreCase("model_compound")) {
@@ -288,7 +327,7 @@ public class Merlin3ToMerlin4 {
 					positions.add(2);
 					positions.add(8);
 					positions.add(10);
-					
+
 					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
 				}
 				else if(newTable.equalsIgnoreCase("model_dblinks")) {
@@ -297,7 +336,7 @@ public class Merlin3ToMerlin4 {
 					positions.add(2);
 					positions.add(4);
 
-					
+
 					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
 				}
 				else if(newTable.equalsIgnoreCase("model_subunit")) {
@@ -306,8 +345,8 @@ public class Merlin3ToMerlin4 {
 				else if(newTable.equalsIgnoreCase("model_reaction")) {
 					ModelConverter.reaction(this.oldConnection, this.newConnection);
 				}
-				
-				else
+
+				else if(!newTable.equalsIgnoreCase("model_reaction_labels"))
 					genericDataRetrieverAndInjection(oldTable, newTable);
 
 			}
@@ -324,136 +363,136 @@ public class Merlin3ToMerlin4 {
 
 			List<Integer> positions = new ArrayList<Integer>();
 
-				String oldTable = newTable.replace("enzymes_annotation_", "");
+			String oldTable = newTable.replace("enzymes_annotation_", "");
 
-				if(newTable.equalsIgnoreCase("enzymes_annotation_organism")) {
-					positions.add(1);
-					positions.add(2);
-					positions.add(4);
-					positions.add(3);
+			if(newTable.equalsIgnoreCase("enzymes_annotation_organism")) {
+				positions.add(1);
+				positions.add(2);
+				positions.add(4);
+				positions.add(3);
 
-					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
-				}
-				else if(newTable.equalsIgnoreCase("enzymes_annotation_productRank_has_organism")) {
-					positions.add(2);
-					positions.add(1);
-					
-					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
-				}
-				else if(newTable.equalsIgnoreCase("enzymes_annotation_ecNumberRank")) {
-					positions.add(1);
-					positions.add(3);
-					positions.add(4);
-					positions.add(2);
-					
-					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
-				}
-				else if(newTable.equalsIgnoreCase("enzymes_annotation_ecNumberRank")) {
-					positions.add(1);
-					positions.add(3);
-					positions.add(4);
-					positions.add(2);
-					
-					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
-				}
-				else if(newTable.equalsIgnoreCase("enzymes_annotation_homologues_has_ecNumber")) {
-					positions.add(2);
-					positions.add(1);
-					
-					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
-				}
-				else if(newTable.equalsIgnoreCase("enzymes_annotation_ecNumberList")) {
-					positions.add(1);
-					positions.add(3);
-					positions.add(2);
-					
-					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
-				}
-				else if(newTable.equalsIgnoreCase("enzymes_annotation_productList")) {
-					positions.add(1);
-					positions.add(3);
-					positions.add(2);
-					
-					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
-				}
-				else if(newTable.equalsIgnoreCase("enzymes_annotation_scorerConfig")) {
-					positions.add(4);
-					positions.add(3);
-					positions.add(9);
-					positions.add(5);
-					positions.add(7);
-					positions.add(8);
-					positions.add(6);
-					positions.add(1);
-					positions.add(2);
-					
-					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
-				}
-				else if(newTable.equalsIgnoreCase("enzymes_annotation_homologyData")) {
-					positions.add(1);
-					positions.add(8);
-					positions.add(6);
-					positions.add(2);
-					positions.add(4);
-					positions.add(3);
-					positions.add(9);
-					positions.add(5);
-					positions.add(7);
-					
-					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
-				}
-				else if(newTable.equalsIgnoreCase("enzymes_annotation_homologySetup")) {
-					positions.add(1);
-					positions.add(4);
-					positions.add(5);
-					positions.add(8);
-					positions.add(6);
-					positions.add(9);
-					positions.add(2);
-					positions.add(3);
-					positions.add(7);
-					
-					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
-				}
-				else if(newTable.equalsIgnoreCase("enzymes_annotation_homologues")) {
-					positions.add(1);
-					positions.add(5);
-					positions.add(4);
-					positions.add(3);
-					positions.add(7);
-					positions.add(6);
-					positions.add(8);
-					positions.add(2);
-					
-					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
-				}
-				else if(newTable.equalsIgnoreCase("enzymes_annotation_geneHomology_has_homologues")) {
-					positions.add(1);
-					positions.add(2);
-					positions.add(6);
-					positions.add(5);
-					positions.add(4);
-					positions.add(3);
-					
-					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
-				}
-				else if(newTable.equalsIgnoreCase("enzymes_annotation_geneHomology")) {
-					EnzymesConverter.geneHomology(this.oldConnection, this.newConnection);
-				}
-				else
-					genericDataRetrieverAndInjection(oldTable, newTable);
-
+				genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
 			}
+			else if(newTable.equalsIgnoreCase("enzymes_annotation_productRank_has_organism")) {
+				positions.add(2);
+				positions.add(1);
+
+				genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
+			}
+			else if(newTable.equalsIgnoreCase("enzymes_annotation_ecNumberRank")) {
+				positions.add(1);
+				positions.add(3);
+				positions.add(4);
+				positions.add(2);
+
+				genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
+			}
+			else if(newTable.equalsIgnoreCase("enzymes_annotation_ecNumberRank")) {
+				positions.add(1);
+				positions.add(3);
+				positions.add(4);
+				positions.add(2);
+
+				genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
+			}
+			else if(newTable.equalsIgnoreCase("enzymes_annotation_homologues_has_ecNumber")) {
+				positions.add(2);
+				positions.add(1);
+
+				genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
+			}
+			else if(newTable.equalsIgnoreCase("enzymes_annotation_ecNumberList")) {
+				positions.add(1);
+				positions.add(3);
+				positions.add(2);
+
+				genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
+			}
+			else if(newTable.equalsIgnoreCase("enzymes_annotation_productList")) {
+				positions.add(1);
+				positions.add(3);
+				positions.add(2);
+
+				genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
+			}
+			else if(newTable.equalsIgnoreCase("enzymes_annotation_scorerConfig")) {
+				positions.add(4);
+				positions.add(3);
+				positions.add(9);
+				positions.add(5);
+				positions.add(7);
+				positions.add(8);
+				positions.add(6);
+				positions.add(1);
+				positions.add(2);
+
+				genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
+			}
+			else if(newTable.equalsIgnoreCase("enzymes_annotation_homologyData")) {
+				positions.add(1);
+				positions.add(8);
+				positions.add(6);
+				positions.add(2);
+				positions.add(4);
+				positions.add(3);
+				positions.add(9);
+				positions.add(5);
+				positions.add(7);
+
+				genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
+			}
+			else if(newTable.equalsIgnoreCase("enzymes_annotation_homologySetup")) {
+				positions.add(1);
+				positions.add(4);
+				positions.add(5);
+				positions.add(8);
+				positions.add(6);
+				positions.add(9);
+				positions.add(2);
+				positions.add(3);
+				positions.add(7);
+
+				genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
+			}
+			else if(newTable.equalsIgnoreCase("enzymes_annotation_homologues")) {
+				positions.add(1);
+				positions.add(5);
+				positions.add(4);
+				positions.add(3);
+				positions.add(7);
+				positions.add(6);
+				positions.add(8);
+				positions.add(2);
+
+				genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
+			}
+			else if(newTable.equalsIgnoreCase("enzymes_annotation_geneHomology_has_homologues")) {
+				positions.add(1);
+				positions.add(2);
+				positions.add(6);
+				positions.add(5);
+				positions.add(4);
+				positions.add(3);
+
+				genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
+			}
+			else if(newTable.equalsIgnoreCase("enzymes_annotation_geneHomology")) {
+				EnzymesConverter.geneHomology(this.oldConnection, this.newConnection);
+			}
+			else
+				genericDataRetrieverAndInjection(oldTable, newTable);
+
+		}
 
 	}
-	
+
 	/**
 	 * Convertion of interpro tables
 	 */
 	public void convertInterpro() {
 
 		for(String newTable : this.interproTables) {
-			
+
 			List<Integer> positions = new ArrayList<Integer>();
 
 			if(newTable.equalsIgnoreCase("interpro_result_has_entry")){
@@ -490,7 +529,7 @@ public class Merlin3ToMerlin4 {
 				positions.add(4);
 				positions.add(2);
 				positions.add(11);
-				
+
 				genericDataRetrieverAndInjectionRespectingOrder(newTable, newTable, positions);
 			}
 			else if(newTable.equalsIgnoreCase("interpro_results")){
@@ -501,7 +540,7 @@ public class Merlin3ToMerlin4 {
 				positions.add(2);
 				positions.add(3);
 				positions.add(7);
-				
+
 				genericDataRetrieverAndInjectionRespectingOrder(newTable, newTable, positions);
 			}
 			else if(newTable.equalsIgnoreCase("interpro_result")){
@@ -517,7 +556,7 @@ public class Merlin3ToMerlin4 {
 				positions.add(4);
 				positions.add(2);
 				positions.add(12);
-				
+
 				genericDataRetrieverAndInjectionRespectingOrder(newTable, newTable, positions);
 			}
 			else
@@ -536,6 +575,8 @@ public class Merlin3ToMerlin4 {
 			Statement oldStatement = oldConnection.createStatement();
 			Statement newStatement = newConnection.createStatement();
 
+			newStatement.execute("DELETE FROM " + newTable + ";");
+
 			ResultSet rs = oldStatement.executeQuery("SELECT * FROM " + oldTable + ";");
 
 			ResultSetMetaData rsmd = rs.getMetaData();
@@ -546,11 +587,16 @@ public class Merlin3ToMerlin4 {
 
 				int col = 1;
 
-				String query = "INSERT INTO " + newTable + " (";
+				String query = "INSERT INTO " + newTable + " VALUES (";
 
 				while(col <= columns) {
 
-					query += rs.getString(col);
+					String data = null;
+
+					if(rs.getString(col) != null)
+						data = "'" + DatabaseUtilities.databaseStrConverter(rs.getString(col), newConnection.getDatabase_type()) + "'";
+
+					query +=  data ;
 
 					if(col < columns)
 						query += ", ";
@@ -567,8 +613,13 @@ public class Merlin3ToMerlin4 {
 			newStatement.close();
 		} 
 		catch (SQLException e) {
-			Workbench.getInstance().error(e);
-			e.printStackTrace();
+
+			if(oldTable.equalsIgnoreCase("protein_complex"))
+				logger.warn("This database does not contain any protein_complex table!");
+			else
+
+				//			Workbench.getInstance().error(e);
+				e.printStackTrace();
 		}
 	}
 
@@ -582,16 +633,24 @@ public class Merlin3ToMerlin4 {
 			Statement oldStatement = oldConnection.createStatement();
 			Statement newStatement = newConnection.createStatement();
 
+			newStatement.execute("DELETE FROM " + newTable + ";");
+
 			ResultSet rs = oldStatement.executeQuery("SELECT * FROM " + oldTable + ";");
 
 			while(rs.next()) {
 
-				String query = "INSERT INTO " + newTable + " (";
+				String query = "INSERT INTO " + newTable + " VALUES (";
 
 				int count = 1;
 
 				for(int pos : positions) {
-					query += rs.getString(pos);
+
+					String data = null;
+
+					if(rs.getString(pos) != null)
+						data = "'" + DatabaseUtilities.databaseStrConverter(rs.getString(pos), newConnection.getDatabase_type()) + "'";
+
+					query +=  data ;
 
 					if(count < positions.size())
 						query += ", ";
@@ -608,7 +667,10 @@ public class Merlin3ToMerlin4 {
 			newStatement.close();
 		} 
 		catch (SQLException e) {
-			Workbench.getInstance().error(e);
+			
+			System.out.println(newTable);
+			
+			//			Workbench.getInstance().error(e);
 			e.printStackTrace();
 		}
 	}

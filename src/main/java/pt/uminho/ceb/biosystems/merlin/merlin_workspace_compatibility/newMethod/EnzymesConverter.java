@@ -6,6 +6,8 @@ import java.sql.Statement;
 
 import es.uvigo.ei.aibench.workbench.Workbench;
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Connection;
+import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.DatabaseUtilities;
+import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Enumerators.DatabaseType;
 
 public class EnzymesConverter {
 
@@ -20,7 +22,11 @@ public class EnzymesConverter {
 			Statement oldStatement2 = oldConnection.createStatement();
 			Statement newStatement = newConnection.createStatement();
 			
+			DatabaseType type = newConnection.getDatabase_type();
+			
 			ResultSet rs = oldStatement.executeQuery("SELECT * FROM geneHomology;");
+			
+			newStatement.execute("DELETE FROM enzymes_annotation_geneHomology;");
 			
 			while(rs.next()) {
 				
@@ -39,8 +45,8 @@ public class EnzymesConverter {
 					Integer sequenceId = rs.getInt(1);
 					
 					newStatement.execute("INSERT INTO enzymes_annotation_geneHomology (skey, homologySetup_s_key, locusTag, query, gene, chromosome, organelle, uniprot_star, status, uniprot_ecnumber, model_sequence_idsequence) VALUES ("
-							+ rs.getString(1) + ", " + rs.getString(2) + ", " + rs.getString(3) + ", " + rs.getString(4) + ", " + rs.getString(5) + ", " + rs.getString(6) +
-							", " + rs.getString(7) + ", " + rs.getString(8) + ", " + rs.getString(9) + ", " + rs.getString(10) + ", " + sequenceId +");");
+							+ rs.getInt(1) + ", " + rs.getInt(2) + ", '" + str(rs.getString(3), type) + "', '" + str(rs.getString(4), type) + "', '" + str(rs.getString(5), type) + "', '" + str(rs.getString(6), type) +
+							"', '" + str(rs.getString(7), type) + "', '" + str(rs.getString(8), type) + "', '" + str(rs.getString(9), type) + "', '" + str(rs.getString(10), type) + "', " + sequenceId +");");
 					
 				}
 				
@@ -58,5 +64,14 @@ public class EnzymesConverter {
 			Workbench.getInstance().error(e);
 			e.printStackTrace();
 		}
+	}
+	
+	private static String str(String word, DatabaseType type) {
+		
+		if(word == null)
+			return null;
+		
+		return DatabaseUtilities.databaseStrConverter(word, type);
+		
 	}
 }

@@ -7,6 +7,8 @@ import java.sql.Statement;
 
 import es.uvigo.ei.aibench.workbench.Workbench;
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Connection;
+import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.DatabaseUtilities;
+import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Enumerators.DatabaseType;
 
 public class ModelConverter {
 	
@@ -20,6 +22,10 @@ public class ModelConverter {
 			Statement oldStatement = oldConnection.createStatement();
 			Statement newStatement = newConnection.createStatement();
 			
+			newStatement.execute("DELETE FROM model_subunit;");
+			
+			DatabaseType type = newConnection.getDatabase_type();
+			
 			ResultSet rs = oldStatement.executeQuery("SELECT * FROM subunit;");
 			
 			ResultSetMetaData rsmd = rs.getMetaData();
@@ -28,10 +34,20 @@ public class ModelConverter {
 			
 			while(rs.next()) {
 				
-				String query = "INSERT INTO model_subunit (" + rs.getString(3) + ", " + rs.getString(2) + ", " + rs.getString(1);
+				String gprStatus = null;
+				
+				String ec =  str(rs.getString(3), type);
+				Integer proteinId = rs.getInt(2);
+				
+				ResultSet rs2 = oldStatement.executeQuery("SELECT gpr_status FROM enzyme WHERE protein_idprotein = " + proteinId + " AND ecnumber = '" + ec + "';");
+				
+				if(rs2.next())
+					gprStatus = str(rs2.getString(1), type);
+				
+				String query = "INSERT INTO model_subunit VALUES (" + ec + ", " + proteinId + ", " + rs.getInt(1);
 						
 				if(columns > 3)		
-						query += ", " + rs.getString(4) + ", " + rs.getString(5) + ", " + rs.getString(6) + ", " + rs.getString(7); 
+						query += ", '" + str(rs.getString(4), type) + "', '" + str(rs.getString(5), type) + "', '" + gprStatus + "', " + str(rs.getString(6), type); 
 						
 						
 				query += ");";
@@ -59,11 +75,16 @@ public class ModelConverter {
 			Statement oldStatement2 = oldConnection.createStatement();
 			Statement newStatement = newConnection.createStatement();
 			
+			DatabaseType type = newConnection.getDatabase_type();
+			
 			ResultSet rs = oldStatement.executeQuery("SELECT * FROM reaction;");
+			
+			newStatement.execute("DELETE FROM model_reaction_labels;");
+			newStatement.execute("DELETE FROM model_reaction;");
 			
 			while(rs.next()) {
 				
-				ResultSet rs2 = oldStatement.executeQuery("SELECT idreaction_label FROM model_reaction_labels WHERE name = " + rs.getString(2) + ";");
+				ResultSet rs2 = newStatement.executeQuery("SELECT idreaction_label FROM model_reaction_labels WHERE name = " + rs.getString(2) + ";");
 				
 				Integer labelId = null;
 				
@@ -72,7 +93,7 @@ public class ModelConverter {
 				
 				if(labelId == null) {
 					newStatement.execute("INSERT INTO model_reaction_labels (equation, isGeneric, isNonEnzymatic, isSpontaneous, name, source) VALUES ("
-							+ rs.getString(3) + ", " + rs.getString(7) + ", " + rs.getString(9) + ", " + rs.getString(8) + ", " + rs.getString(2) + ", " + rs.getString(10) +");");
+							+ str(rs.getString(3), type) + ", " + rs.getString(7) + ", " + rs.getString(9) + ", " + rs.getString(8) + ", " + str(rs.getString(2), type) + ", " + str(rs.getString(10), type) +");");
 					
 					ResultSet rs3 = newStatement.executeQuery("SELECT LAST_INSERT_ID()");
 					rs3.next();
@@ -85,7 +106,8 @@ public class ModelConverter {
 				rs2.close();
 				
 				newStatement.execute("INSERT INTO model_reaction (idreaction, boolean_rule, inModel, lowerBound, notes, upperBound, compartment_idcompartment, model_reaction_labels_idreaction_labels) VALUES ("
-						+ rs.getString(1) + ", " + rs.getString(5) + ", " + rs.getString(6) + ", " + rs.getString(14) + ", " + rs.getString(13) + ", " + rs.getString(15) + ", " + rs.getString(12) + "," + labelId + ");");
+						+ rs.getInt(1) + ", '" + str(rs.getString(5), type) + "', '" + str(rs.getString(6), type) + "', '" + str(rs.getString(14), type) + "', '" + str(rs.getString(13), type) + "', '"
+						+ str(rs.getString(15), type) + "', '" + str(rs.getString(12), type) + "', " + labelId + ");");
 				
 			}
 			
@@ -96,8 +118,17 @@ public class ModelConverter {
 			newStatement.close();
 		} 
 		catch (SQLException e) {
-			Workbench.getInstance().error(e);
+//			Workbench.getInstance().error(e);
 			e.printStackTrace();
 		}
+	}
+	
+	private static String str(String word, DatabaseType type) {
+		
+		if(word == null)
+			return null;
+		
+		return DatabaseUtilities.databaseStrConverter(word, type);
+		
 	}
 }
