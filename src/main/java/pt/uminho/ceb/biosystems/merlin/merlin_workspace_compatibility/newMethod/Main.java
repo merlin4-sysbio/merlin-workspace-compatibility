@@ -13,18 +13,25 @@ public class Main {
 	public static void main(String[] args) {
 		
 		String old_host = "192.168.85.192";
-		String old_databaseName = "mhungateiJF1";
+		String old_databaseName = "cork";
 		String old_password = "dev$2018merlin";
 		String old_port = "2401";
 		String old_username = "merlindev";
 		DatabaseType old_type = DatabaseType.MYSQL;
 		
-		String new_host = "C:\\Users\\BioSystems\\merlin4\\merlin-aibench";
-		String new_databaseName = "converter_test";
-		String new_password = "password";
-		String new_port = "";
-		String new_username = "root";		
-		DatabaseType new_type = DatabaseType.H2;
+//		String new_host = "C:\\Users\\BioSystems\\merlin4\\merlin-aibench";
+//		String new_databaseName = "converter_test";
+//		String new_password = "password";
+//		String new_port = "";
+//		String new_username = "root";		
+//		DatabaseType new_type = DatabaseType.H2;
+		
+		String new_host = "192.168.85.192";
+		String new_databaseName = "cork_v4";
+		String new_password = "dev$2018merlin";
+		String new_port = "2401";
+		String new_username = "merlindev";		
+		DatabaseType new_type = DatabaseType.MYSQL;
 		
 		DatabaseAccess oldAccess = generateDBAccess(old_host, old_databaseName, old_password, old_port, old_username, old_type);
 		

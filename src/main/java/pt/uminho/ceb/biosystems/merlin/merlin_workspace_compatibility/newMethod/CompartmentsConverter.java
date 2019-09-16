@@ -7,6 +7,7 @@ import java.sql.Statement;
 import es.uvigo.ei.aibench.workbench.Workbench;
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Connection;
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.DatabaseUtilities;
+import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Enumerators.DatabaseType;
 
 public class CompartmentsConverter {
 
@@ -30,10 +31,10 @@ public class CompartmentsConverter {
 				String locus = null;
 				
 				if(rs.getString(4) != null)
-					date = "'" + DatabaseUtilities.databaseStrConverter(rs.getString(4), newConnection.getDatabase_type()) + "'";
+					date =  str(rs.getString(4), newConnection.getDatabase_type());
 				
 				if(rs.getString(3) != null)
-					locus = "'" + DatabaseUtilities.databaseStrConverter(rs.getString(2), newConnection.getDatabase_type()) + "'";
+					locus = str(rs.getString(2), newConnection.getDatabase_type());
 				
 				String query = "INSERT INTO compartments_annotation_reports VALUES (" + rs.getInt(1) + ", " + 
 				date + ", " + locus + ");";
@@ -48,5 +49,19 @@ public class CompartmentsConverter {
 			Workbench.getInstance().error(e);
 			e.printStackTrace();
 		}
+	}
+	
+	/**
+	 * @param word
+	 * @param type
+	 * @return
+	 */
+	public static String str(String word, DatabaseType type) {
+		
+		if(word == null || word.equalsIgnoreCase("null"))
+			return null;
+		
+		return "'" + DatabaseUtilities.databaseStrConverter(word, type) + "'";
+		
 	}
 }
