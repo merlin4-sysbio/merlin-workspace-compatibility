@@ -665,24 +665,24 @@ public class Merlin3ToMerlin4 {
 			if(newConnection.getDatabase_type().equals(DatabaseType.H2))
 				newTable = newTable.toLowerCase();
 
-//			newStatement.execute("DELETE FROM " + newTable + ";");
+			newStatement.execute("DELETE FROM " + newTable + ";");
 
 			ResultSet rs = oldStatement.executeQuery("SELECT * FROM " + oldTable + ";");
 
-			ResultSet rs2 = newStatement.executeQuery("SELECT * FROM "+ newTable +";");
+//			ResultSet rs2 = newStatement.executeQuery("SELECT * FROM "+ newTable +";");
 
-			while(rs2.next()) {
-				if(!alreadyUploaded.containsKey(rs2.getInt(1)))
-					alreadyUploaded.put(rs2.getInt(1), new ArrayList<>());
-				
-				alreadyUploaded.get(rs2.getInt(1)).add(rs2.getInt(2));
-			}
-
-			rs2.close();
+//			while(rs2.next()) {
+//				if(!alreadyUploaded.containsKey(rs2.getInt(1)))
+//					alreadyUploaded.put(rs2.getInt(1), new ArrayList<>());
+//				
+//				alreadyUploaded.get(rs2.getInt(1)).add(rs2.getInt(2));
+//			}
+//
+//			rs2.close();
 
 			while(rs.next()) {
 
-				if(!alreadyUploaded.containsKey(rs.getInt(1)) || !alreadyUploaded.get(rs.getInt(1)).contains(rs.getInt(2))) {
+//				if(!alreadyUploaded.containsKey(rs.getInt(1)) || !alreadyUploaded.get(rs.getInt(1)).contains(rs.getInt(2))) {
 
 					try {
 						String query = "INSERT INTO " + newTable + " VALUES (";
@@ -715,7 +715,7 @@ public class Merlin3ToMerlin4 {
 						//					System.out.println("Primary key constraint violation in table " + newTable);
 						//					e.printStackTrace();
 					}
-				}
+//				}
 			}
 
 			rs.close();

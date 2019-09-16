@@ -1,3 +1,2 @@
 enzymes_annotation_productRank_has_organism
 enzymes_annotation_homologues_has_ecNumber
-enzymes_annotation_geneHomology_has_homologues
