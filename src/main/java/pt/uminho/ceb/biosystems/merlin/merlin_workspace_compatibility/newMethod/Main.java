@@ -12,10 +12,8 @@ public class Main {
 
 	public static void main(String[] args) {
 		
-		System.exit(0);
-		
 		String old_host = "palsson.di.uminho.pt";
-		String old_databaseName = "hpluvialis";
+		String old_databaseName = "lacidophilus";
 		String old_password = "dev$2018merlin";
 		String old_port = "2401";
 		String old_username = "merlindev";
@@ -29,7 +27,7 @@ public class Main {
 //		DatabaseType new_type = DatabaseType.H2;
 		
 		String new_host = "palsson.di.uminho.pt";
-		String new_databaseName = "hpluvialis_v4";
+		String new_databaseName = "lacidophilus_v4";
 		String new_password = "dev$2018merlin";
 		String new_port = "2401";
 		String new_username = "merlindev";		

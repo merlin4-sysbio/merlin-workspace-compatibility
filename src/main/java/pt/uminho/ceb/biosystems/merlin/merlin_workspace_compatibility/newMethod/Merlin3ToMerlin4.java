@@ -51,23 +51,23 @@ public class Merlin3ToMerlin4 {
 
 		logger.info("importing projects table...");
 
-//				convertProjects();
+		convertProjects();
 
 		logger.info("importing compartments tables...");
 
-//				convertCompartments();
+		convertCompartments();
 
 		logger.info("importing interpro tables...");
 
-//				convertInterpro();
+		convertInterpro();
 
 		logger.info("importing model tables...");
 
-				convertModel();
+		convertModel();
 
 		logger.info("importing enzymes tables...");
 
-//		convertEnzymes();
+		convertEnzymes();
 	}
 
 	/**
@@ -669,55 +669,55 @@ public class Merlin3ToMerlin4 {
 
 			ResultSet rs = oldStatement.executeQuery("SELECT * FROM " + oldTable + ";");
 
-//			ResultSet rs2 = newStatement.executeQuery("SELECT * FROM "+ newTable +";");
+			//			ResultSet rs2 = newStatement.executeQuery("SELECT * FROM "+ newTable +";");
 
-//			while(rs2.next()) {
-//				if(!alreadyUploaded.containsKey(rs2.getInt(1)))
-//					alreadyUploaded.put(rs2.getInt(1), new ArrayList<>());
-//				
-//				alreadyUploaded.get(rs2.getInt(1)).add(rs2.getInt(2));
-//			}
-//
-//			rs2.close();
+			//			while(rs2.next()) {
+			//				if(!alreadyUploaded.containsKey(rs2.getInt(1)))
+			//					alreadyUploaded.put(rs2.getInt(1), new ArrayList<>());
+			//				
+			//				alreadyUploaded.get(rs2.getInt(1)).add(rs2.getInt(2));
+			//			}
+			//
+			//			rs2.close();
 
 			while(rs.next()) {
 
-//				if(!alreadyUploaded.containsKey(rs.getInt(1)) || !alreadyUploaded.get(rs.getInt(1)).contains(rs.getInt(2))) {
+				//				if(!alreadyUploaded.containsKey(rs.getInt(1)) || !alreadyUploaded.get(rs.getInt(1)).contains(rs.getInt(2))) {
 
-					try {
-						String query = "INSERT INTO " + newTable + " VALUES (";
+				try {
+					String query = "INSERT INTO " + newTable + " VALUES (";
 
-						int count = 1;
+					int count = 1;
 
-						for(int pos : positions) {
+					for(int pos : positions) {
 
-							String data = null;
+						String data = null;
 
-							if(rs.getString(pos) != null)
-								data = ModelConverter.str(rs.getString(pos), newConnection.getDatabase_type());
+						if(rs.getString(pos) != null)
+							data = ModelConverter.str(rs.getString(pos), newConnection.getDatabase_type());
 
-							query +=  data ;
+						query +=  data ;
 
-							if(count < positions.size())
-								query += ", ";
+						if(count < positions.size())
+							query += ", ";
 
-							count++;
-						}
-
-						query += ");";
-
-//						System.out.println(query);
-						
-						newStatement.execute(query);
-					} catch (JdbcSQLIntegrityConstraintViolationException e) {
-						//					System.out.println("Primary key constraint violation in table " + newTable);
-//											e.printStackTrace();
+						count++;
 					}
-					catch (MySQLIntegrityConstraintViolationException e) {
-						//					System.out.println("Primary key constraint violation in table " + newTable);
-//											e.printStackTrace();
-					}
-//				}
+
+					query += ");";
+
+					//						System.out.println(query);
+
+					newStatement.execute(query);
+				} catch (JdbcSQLIntegrityConstraintViolationException e) {
+					//					System.out.println("Primary key constraint violation in table " + newTable);
+					//											e.printStackTrace();
+				}
+				catch (MySQLIntegrityConstraintViolationException e) {
+					//					System.out.println("Primary key constraint violation in table " + newTable);
+					//											e.printStackTrace();
+				}
+				//				}
 			}
 
 			rs.close();

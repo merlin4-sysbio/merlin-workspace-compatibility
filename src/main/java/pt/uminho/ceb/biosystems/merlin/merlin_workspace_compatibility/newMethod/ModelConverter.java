@@ -152,10 +152,15 @@ public class ModelConverter {
 					upperBoundColumnName = "upperbound";
 				}
 				
+				Integer compartment = rs.getInt(12);
+				
+				if(compartment == 1)
+					compartment = null;
+				
 				newStatement.execute("INSERT INTO model_reaction (idreaction, boolean_rule, " + inModelColumnName + ", " + lowerBoundColumnName + ", notes, " + upperBoundColumnName + 
 						", compartment_idcompartment, model_reaction_labels_idreaction_label) VALUES ("
 						+ rs.getInt(1) + ", " + str(rs.getString(5), type) + ", " + rs.getInt(6) + ", " + str(rs.getString(14), type) + ", " + str(rs.getString(13), type) + ", "
-						+ str(rs.getString(15), type) + ", " + str(rs.getString(12), type) + ", " + labelId + ");");
+						+ str(rs.getString(15), type) + ", " + compartment + ", " + labelId + ");");
 				
 			}
 			
