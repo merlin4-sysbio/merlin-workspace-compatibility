@@ -6,6 +6,8 @@ import java.sql.Statement;
 
 import es.uvigo.ei.aibench.workbench.Workbench;
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Connection;
+import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.DatabaseUtilities;
+import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Enumerators.DatabaseType;
 
 public class CompartmentsConverter {
 
@@ -19,11 +21,23 @@ public class CompartmentsConverter {
 			Statement oldStatement = oldConnection.createStatement();
 			Statement newStatement = newConnection.createStatement();
 			
+			newStatement.execute("DELETE FROM compartments_annotation_reports;");
+			
 			ResultSet rs = oldStatement.executeQuery("SELECT * FROM psort_reports;");
 			
 			while(rs.next()) {
 				
-				String query = "INSERT INTO compartments_annotation_reports (" + rs.getString(1) + ", " + rs.getString(4) + ", " + rs.getString(3) + ");";
+				String date = null;
+				String locus = null;
+				
+				if(rs.getString(4) != null)
+					date =  str(rs.getString(4), newConnection.getDatabase_type());
+				
+				if(rs.getString(3) != null)
+					locus = str(rs.getString(2), newConnection.getDatabase_type());
+				
+				String query = "INSERT INTO compartments_annotation_reports VALUES (" + rs.getInt(1) + ", " + 
+				date + ", " + locus + ");";
 				
 				newStatement.execute(query);
 			}
@@ -35,5 +49,19 @@ public class CompartmentsConverter {
 			Workbench.getInstance().error(e);
 			e.printStackTrace();
 		}
+	}
+	
+	/**
+	 * @param word
+	 * @param type
+	 * @return
+	 */
+	public static String str(String word, DatabaseType type) {
+		
+		if(word == null || word.equalsIgnoreCase("null"))
+			return null;
+		
+		return "'" + DatabaseUtilities.databaseStrConverter(word, type) + "'";
+		
 	}
 }

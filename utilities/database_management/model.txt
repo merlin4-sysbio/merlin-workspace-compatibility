@@ -1,15 +1,14 @@
 model_stoichiometry
-model_reaction_has_enzyme
+model_reaction_has_model_protein
 model_sequence_feature
 model_gene_has_orthology
 model_module_has_orthology
-model_pathway_has_enzyme
+model_pathway_has_model_protein
 model_subunit
 model_gene_has_compartment
 model_pathway_has_compound
 model_pathway_has_reaction
 model_pathway_has_module
-model_activating_reaction
 model_modules_has_compound
 model_effector
 model_substrate_affinity
@@ -20,7 +19,6 @@ model_functional_parameter
 model_same_as
 model_sequence
 model_superpathway
-model_enzyme
 model_reaction
 model_protein_composition
 model_entityisfrom
@@ -37,7 +35,6 @@ model_feature
 model_dictionary
 model_aliases
 model_dblinks
-model_protein_complex
 model_pathway
 model_module
 model_compartment
