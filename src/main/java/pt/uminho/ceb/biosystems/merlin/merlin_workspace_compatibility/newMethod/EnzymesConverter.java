@@ -30,7 +30,7 @@ public class EnzymesConverter {
 
 			Map<String, Integer> sequencesMapping = new HashMap<>();
 
-			ResultSet rs = oldStatement.executeQuery("SELECT query, idsequence FROM sequence "
+			ResultSet rs = oldStatement.executeQuery("SELECT geneHomology.query, idsequence FROM sequence "
 					+ "INNER JOIN gene ON idgene = gene_idgene INNER JOIN geneHomology ON sequence_id = query;");
 
 			while(rs.next())

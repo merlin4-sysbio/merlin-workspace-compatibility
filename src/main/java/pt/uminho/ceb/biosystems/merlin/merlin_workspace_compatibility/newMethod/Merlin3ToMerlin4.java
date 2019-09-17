@@ -51,23 +51,23 @@ public class Merlin3ToMerlin4 {
 
 		logger.info("importing projects table...");
 
-		//		convertProjects();
+//				convertProjects();
 
 		logger.info("importing compartments tables...");
 
-		//		convertCompartments();
+//				convertCompartments();
 
 		logger.info("importing interpro tables...");
 
-		//		convertInterpro();
+//				convertInterpro();
 
 		logger.info("importing model tables...");
 
-		//		convertModel();
+				convertModel();
 
 		logger.info("importing enzymes tables...");
 
-		convertEnzymes();
+//		convertEnzymes();
 	}
 
 	/**
@@ -706,14 +706,16 @@ public class Merlin3ToMerlin4 {
 
 						query += ");";
 
+//						System.out.println(query);
+						
 						newStatement.execute(query);
 					} catch (JdbcSQLIntegrityConstraintViolationException e) {
 						//					System.out.println("Primary key constraint violation in table " + newTable);
-						//					e.printStackTrace();
+//											e.printStackTrace();
 					}
 					catch (MySQLIntegrityConstraintViolationException e) {
 						//					System.out.println("Primary key constraint violation in table " + newTable);
-						//					e.printStackTrace();
+//											e.printStackTrace();
 					}
 //				}
 			}
