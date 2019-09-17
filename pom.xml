@@ -4,7 +4,7 @@
 
   <groupId>pt.uminho.ceb.biosystems.merlin</groupId>
   <artifactId>merlin-workspace-compatibility</artifactId>
-  <version>4.0.0-SNAPSHOT</version>
+  <version>4.0.1-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>merlin-workspace-compatibility</name>
@@ -86,7 +86,7 @@
 		<dependency>
 			<groupId>pt.uminho.ceb.biosystems.merlin</groupId>
 			<artifactId>merlin-aibench</artifactId>
-			<version>4.0.0-SNAPSHOT</version>
+			<version>4.0.1-SNAPSHOT</version>
 		</dependency>
 	</dependencies>
 </project>
