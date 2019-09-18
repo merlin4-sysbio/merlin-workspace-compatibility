@@ -51,19 +51,19 @@ public class Merlin3ToMerlin4 {
 
 		logger.info("importing projects table...");
 
-		convertProjects();
+//		convertProjects();
 
 		logger.info("importing compartments tables...");
 
-		convertCompartments();
+//		convertCompartments();
 
 		logger.info("importing interpro tables...");
 
-		convertInterpro();
+//		convertInterpro();
 
 		logger.info("importing model tables...");
 
-		convertModel();
+//		convertModel();
 
 		logger.info("importing enzymes tables...");
 
@@ -177,7 +177,7 @@ public class Merlin3ToMerlin4 {
 					positions.add(3);
 					positions.add(2);
 
-					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
+					ModelConverter.sequence(oldConnection, newConnection);
 				}
 				else if(newTable.equalsIgnoreCase("model_enzymatic_cofactor")) {
 					positions.add(1);
@@ -631,6 +631,10 @@ public class Merlin3ToMerlin4 {
 					//		System.out.println("Primary key constraint violation in table " + newTable);
 					//		e.printStackTrace();
 				}
+				catch (MySQLIntegrityConstraintViolationException e) {
+					//		System.out.println("Primary key constraint violation in table " + newTable);
+					//		e.printStackTrace();
+				}
 			}
 
 			rs.close();
@@ -773,9 +777,13 @@ public class Merlin3ToMerlin4 {
 					}
 
 					query += ");";
-
+					
 					newStatement.execute(query);
 				} catch (JdbcSQLIntegrityConstraintViolationException e) {
+					//					System.out.println("Primary key constraint violation in table " + newTable);
+					//					e.printStackTrace();
+				}
+				catch (MySQLIntegrityConstraintViolationException e) {
 					//					System.out.println("Primary key constraint violation in table " + newTable);
 					//					e.printStackTrace();
 				}

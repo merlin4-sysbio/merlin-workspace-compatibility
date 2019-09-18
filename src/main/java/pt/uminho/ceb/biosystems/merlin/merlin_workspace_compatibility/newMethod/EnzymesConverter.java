@@ -31,7 +31,7 @@ public class EnzymesConverter {
 			Map<String, Integer> sequencesMapping = new HashMap<>();
 
 			ResultSet rs = oldStatement.executeQuery("SELECT geneHomology.query, idsequence FROM sequence "
-					+ "INNER JOIN gene ON idgene = gene_idgene INNER JOIN geneHomology ON sequence_id = query;");
+					+ "INNER JOIN gene ON idgene = gene_idgene INNER JOIN geneHomology ON sequence_id = geneHomology.query;");
 
 			while(rs.next())
 				sequencesMapping.put(str(rs.getString(1), type), rs.getInt(2));
@@ -52,7 +52,7 @@ public class EnzymesConverter {
 				homologySetupColumnName = "homologysetup_s_key";
 				locusTagColumnName = "locustag";
 			}
-
+			
 			while(rs.next()) {
 
 				try {
@@ -71,8 +71,9 @@ public class EnzymesConverter {
 						String sequence = str(rs2.getString(1), type);
 
 						if(sequence != null) {
-							rs2 = oldStatement2.executeQuery("SELECT idsequence FROM sequence INNER JOIN WHERE sequence = " + sequence + ";");
-
+							
+							rs2 = oldStatement2.executeQuery("SELECT idsequence FROM sequence WHERE sequence = " + sequence + ";");
+							
 							rs2.next();
 							sequenceId = rs.getInt(1);
 						}
@@ -80,7 +81,6 @@ public class EnzymesConverter {
 						rs2.close();
 					}
 
-					
 					newStatement.execute("INSERT INTO " + newTable + " (s_key, " + homologySetupColumnName + ", " + locusTagColumnName + ", query, gene, chromosome, organelle, uniprot_star, status, uniprot_ecnumber, model_sequence_idsequence) VALUES ("
 							+ rs.getInt(1) + ", " + rs.getInt(2) + ", " + str(rs.getString(3), type) + ", " + query + ", " + str(rs.getString(5), type) + ", " + str(rs.getString(6), type) +
 							", " + str(rs.getString(7), type) + ", " + rs.getInt(8) + ", " + str(rs.getString(9), type) + ", " + str(rs.getString(10), type) + ", " + sequenceId +");");

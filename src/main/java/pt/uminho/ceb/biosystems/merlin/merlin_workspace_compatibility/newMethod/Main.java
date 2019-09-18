@@ -50,7 +50,6 @@ public class Main {
 //			Workbench.getInstance().error("An error occurred while converting the workspace!");
 			e.printStackTrace();
 		}
-		
 
 	}
 	
