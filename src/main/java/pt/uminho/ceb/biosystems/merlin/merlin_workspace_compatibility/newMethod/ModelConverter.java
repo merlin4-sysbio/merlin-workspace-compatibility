@@ -8,11 +8,15 @@ import java.sql.Statement;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.biojava.nbio.core.sequence.ProteinSequence;
 import org.biojava.nbio.core.sequence.io.FastaReaderHelper;
 import org.h2.jdbc.JdbcSQLIntegrityConstraintViolationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import com.mysql.jdbc.exceptions.jdbc4.CommunicationsException;
 import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
 
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Connection;
@@ -21,12 +25,16 @@ import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Enumerators.
 import pt.uminho.ceb.biosystems.merlin.utilities.Enumerators.SequenceType;
 
 public class ModelConverter {
+	
+	private static final Logger logger = LoggerFactory.getLogger(Merlin3ToMerlin4.class);
+	private static final int LIMIT = 3;
 
 	/**
 	 * @param oldTable
 	 * @param newTable
+	 * @throws InterruptedException 
 	 */
-	public static void subunit(Connection oldConnection, Connection newConnection) {
+	public static void subunit(Connection oldConnection, Connection newConnection, int error) throws InterruptedException {
 
 		try {
 			Statement oldStatement = oldConnection.createStatement();
@@ -83,6 +91,24 @@ public class ModelConverter {
 					System.out.println("Primary key constraint violation geneId = " + geneId + " and proteinId = " + proteinId);
 					//					e.printStackTrace();
 				}
+				catch (CommunicationsException e) {
+
+					if(error < LIMIT) {
+						
+						logger.error("Communications exception! Retrying...");
+
+						TimeUnit.MINUTES.sleep(1);
+
+						error++;
+						
+						oldConnection = new Connection(oldConnection.getDatabaseAccess());
+						newConnection = new Connection(newConnection.getDatabaseAccess());
+						
+						subunit(oldConnection, newConnection, error);
+					}
+					//					System.out.println("Primary key constraint violation in table " + newTable);
+					//					e.printStackTrace();
+				}
 			}
 
 			rs.close();
@@ -100,8 +126,9 @@ public class ModelConverter {
 	/**
 	 * @param oldTable
 	 * @param newTable
+	 * @throws InterruptedException 
 	 */
-	public static void reaction(Connection oldConnection, Connection newConnection) {
+	public static void reaction(Connection oldConnection, Connection newConnection, int error) throws InterruptedException {
 
 		try {
 			Statement oldStatement = oldConnection.createStatement();
@@ -159,13 +186,30 @@ public class ModelConverter {
 				}
 
 				Integer compartment = rs.getInt(12);
+				
+				String lowerBound = "'-999999'";
+				
+				if(rs.getString(14) == null) {
+					
+					Boolean isReversible = rs.getBoolean("reversible");
+					
+					if(isReversible != null) {
+						
+						if(!isReversible)
+							lowerBound = "'0'";
+					}
+				}
+				else {
+					lowerBound = str(rs.getString(14), type);
+				}
+					
 
 				if(compartment == 1)
 					compartment = null;
 
 				newStatement.execute("INSERT INTO model_reaction (idreaction, boolean_rule, " + inModelColumnName + ", " + lowerBoundColumnName + ", notes, " + upperBoundColumnName + 
 						", compartment_idcompartment, model_reaction_labels_idreaction_label) VALUES ("
-						+ rs.getInt(1) + ", " + str(rs.getString(5), type) + ", " + rs.getInt(6) + ", " + str(rs.getString(14), type) + ", " + str(rs.getString(13), type) + ", "
+						+ rs.getInt(1) + ", " + str(rs.getString(5), type) + ", " + rs.getInt(6) + ", " + lowerBound + ", " + str(rs.getString(13), type) + ", "
 						+ str(rs.getString(15), type) + ", " + compartment + ", " + labelId + ");");
 
 			}
@@ -176,6 +220,24 @@ public class ModelConverter {
 			oldStatement2.close();
 			newStatement.close();
 		} 
+		catch (CommunicationsException e) {
+
+			if(error < LIMIT) {
+				
+				logger.error("Communications exception! Retrying...");
+
+				TimeUnit.MINUTES.sleep(1);
+
+				error++;
+				
+				oldConnection = new Connection(oldConnection.getDatabaseAccess());
+				newConnection = new Connection(newConnection.getDatabaseAccess());
+				
+				reaction(oldConnection, newConnection, error);
+			}
+			//					System.out.println("Primary key constraint violation in table " + newTable);
+			//					e.printStackTrace();
+		}
 		catch (SQLException e) {
 			//			Workbench.getInstance().error(e);
 			e.printStackTrace();
@@ -185,8 +247,9 @@ public class ModelConverter {
 	/**
 	 * @param oldTable
 	 * @param newTable
+	 * @throws InterruptedException 
 	 */
-	public static void protein(Connection oldConnection, Connection newConnection) {
+	public static void protein(Connection oldConnection, Connection newConnection, int error) throws InterruptedException {
 
 		try {
 			Statement oldStatement = oldConnection.createStatement();
@@ -237,13 +300,31 @@ public class ModelConverter {
 			oldStatement2.close();
 			newStatement.close();
 		} 
+		catch (CommunicationsException e) {
+
+			if(error < LIMIT) {
+				
+				logger.error("Communications exception! Retrying...");
+
+				TimeUnit.MINUTES.sleep(1);
+
+				error++;
+				
+				oldConnection = new Connection(oldConnection.getDatabaseAccess());
+				newConnection = new Connection(newConnection.getDatabaseAccess());
+				
+				protein(oldConnection, newConnection, error);
+			}
+			//					System.out.println("Primary key constraint violation in table " + newTable);
+			//					e.printStackTrace();
+		}
 		catch (SQLException e) {
 			//			Workbench.getInstance().error(e);
 			e.printStackTrace();
 		}
 	}
 
-	public static void sequence(Connection oldConnection, Connection newConnection){
+	public static void sequence(Connection oldConnection, Connection newConnection, int error) throws InterruptedException{
 
 		try {
 			Statement oldStatement = oldConnection.createStatement();
@@ -310,10 +391,29 @@ public class ModelConverter {
 			newStatement.close();
 
 		} 
+		catch (CommunicationsException e) {
+
+			if(error < LIMIT) {
+				
+				logger.error("Communications exception! Retrying...");
+
+				TimeUnit.MINUTES.sleep(1);
+
+				error++;
+				
+				oldConnection = new Connection(oldConnection.getDatabaseAccess());
+				newConnection = new Connection(newConnection.getDatabaseAccess());
+				
+				sequence(oldConnection, newConnection, error);
+			}
+			//					System.out.println("Primary key constraint violation in table " + newTable);
+			//					e.printStackTrace();
+		}
 		catch (Exception e) {
 			//		Workbench.getInstance().error(e);
 			e.printStackTrace();
 		}
+		
 
 	}
 

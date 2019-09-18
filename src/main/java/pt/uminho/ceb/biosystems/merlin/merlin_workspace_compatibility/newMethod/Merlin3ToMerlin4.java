@@ -9,18 +9,18 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.h2.jdbc.JdbcSQLIntegrityConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.mysql.jdbc.exceptions.jdbc4.CommunicationsException;
 import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
 
 import es.uvigo.ei.aibench.workbench.Workbench;
 import jersey.repackaged.com.google.common.collect.Lists;
-import pt.uminho.ceb.biosystems.merlin.aibench.operations.transporters.transyt.IntegrateTransportersDataTransyt;
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Connection;
-import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.DatabaseUtilities;
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Enumerators.DatabaseType;
 import pt.uminho.ceb.biosystems.merlin.utilities.DatabaseFilesPaths;
 import pt.uminho.ceb.biosystems.merlin.utilities.io.FileUtils;
@@ -35,6 +35,7 @@ public class Merlin3ToMerlin4 {
 	List<String> modelTables;
 
 	private static final Logger logger = LoggerFactory.getLogger(Merlin3ToMerlin4.class);
+	private static final int LIMIT = 3;
 
 	public Merlin3ToMerlin4(Connection oldConnection, Connection newConnection) {
 
@@ -45,29 +46,36 @@ public class Merlin3ToMerlin4 {
 
 	public void start() throws IOException {
 
-		logger.info("reading tables names...");
+		try {
+			logger.info("reading tables names...");
 
-		readTablesNames();
+			readTablesNames();
 
-		logger.info("importing projects table...");
+			logger.info("importing projects table...");
 
-//		convertProjects();
+			convertProjects();
 
-		logger.info("importing compartments tables...");
+			logger.info("importing compartments tables...");
 
-//		convertCompartments();
+			convertCompartments();
 
-		logger.info("importing interpro tables...");
+			logger.info("importing interpro tables...");
 
-//		convertInterpro();
+			convertInterpro();
 
-		logger.info("importing model tables...");
+			logger.info("importing model tables...");
 
-//		convertModel();
+			convertModel();
 
-		logger.info("importing enzymes tables...");
+			logger.info("importing enzymes tables...");
 
-		convertEnzymes();
+			convertEnzymes();
+		} 
+		catch (InterruptedException e) {
+			Workbench.getInstance().error(e);
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	/**
@@ -92,8 +100,9 @@ public class Merlin3ToMerlin4 {
 
 	/**
 	 * Convertion of projects table
+	 * @throws InterruptedException 
 	 */
-	public void convertProjects() {
+	public void convertProjects() throws InterruptedException {
 
 		List<Integer> positions = new ArrayList<Integer>();
 		List<Integer> bits = new ArrayList<Integer>();
@@ -108,15 +117,20 @@ public class Merlin3ToMerlin4 {
 		positions.add(5);
 
 		bits.add(3);
-		genericDataRetrieverAndInjectionRespectingOrderAndBitsType("projects", "projects", positions, bits);
+		genericDataRetrieverAndInjectionRespectingOrderAndBitsType("projects", "projects", positions, bits, 0);
 	}
 
 	/**
 	 * Convertion of compartments_annotation tables
+	 * @throws InterruptedException 
 	 */
-	public void convertCompartments() {
+	public void convertCompartments() throws InterruptedException {
 
 		for(String newTable : this.compartmentsTables) {
+			
+			int error = 0;
+
+			logger.info("Table: " + newTable);
 
 			List<Integer> positions = new ArrayList<Integer>();
 
@@ -128,30 +142,35 @@ public class Merlin3ToMerlin4 {
 				positions.add(1);
 				positions.add(3);
 
-				genericDataRetrieverAndInjectionRespectingOrder("psort_reports_has_compartments", newTable, positions);
+				genericDataRetrieverAndInjectionRespectingOrder("psort_reports_has_compartments", newTable, positions, error);
 			}
 			else if(newTable.equalsIgnoreCase("compartments_annotation_compartments")){
 				positions.add(1);
 				positions.add(3);
 				positions.add(3);
 
-				genericDataRetrieverAndInjectionRespectingOrder("compartments", newTable, positions);
+				genericDataRetrieverAndInjectionRespectingOrder("compartments", newTable, positions, error);
 			}
 			else
-				genericDataRetrieverAndInjection(newTable.replace("compartments_annotation_", ""), newTable);
+				genericDataRetrieverAndInjection(newTable.replace("compartments_annotation_", ""), newTable, error);
 
 		}
 	}
 
 	/**
 	 * Convertion of model tables
+	 * @throws InterruptedException 
 	 */
-	public void convertModel() {
+	public void convertModel() throws InterruptedException {
 
 		for(String newTable : this.modelTables) {
 
 			List<Integer> positions = new ArrayList<Integer>();
 			List<Integer> bits = new ArrayList<Integer>();
+
+			logger.info("Table: " + newTable);
+			
+			int error = 0;
 
 			if(newTable.startsWith("model_")) {
 
@@ -168,7 +187,7 @@ public class Merlin3ToMerlin4 {
 					positions.add(6);
 					positions.add(4);
 
-					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
+					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
 				}
 				else if(newTable.equalsIgnoreCase("model_sequence")) {
 					positions.add(1);
@@ -177,7 +196,7 @@ public class Merlin3ToMerlin4 {
 					positions.add(3);
 					positions.add(2);
 
-					ModelConverter.sequence(oldConnection, newConnection);
+					ModelConverter.sequence(oldConnection, newConnection, error);
 				}
 				else if(newTable.equalsIgnoreCase("model_enzymatic_cofactor")) {
 					positions.add(1);
@@ -186,7 +205,7 @@ public class Merlin3ToMerlin4 {
 
 					bits.add(3);
 
-					genericDataRetrieverAndInjectionRespectingOrderAndBitsType(oldTable, newTable, positions, bits);
+					genericDataRetrieverAndInjectionRespectingOrderAndBitsType(oldTable, newTable, positions, bits, error);
 				}
 				else if(newTable.equalsIgnoreCase("model_feature")) {
 					positions.add(1);
@@ -195,7 +214,7 @@ public class Merlin3ToMerlin4 {
 					positions.add(5);
 					positions.add(4);
 
-					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
+					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
 				}
 				else if(newTable.equalsIgnoreCase("model_sequence_feature")) {
 					positions.add(1);
@@ -203,7 +222,7 @@ public class Merlin3ToMerlin4 {
 					positions.add(4);
 					positions.add(3);
 
-					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
+					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
 				}
 				else if(newTable.equalsIgnoreCase("model_pathway")) {
 					positions.add(1);
@@ -212,7 +231,7 @@ public class Merlin3ToMerlin4 {
 					positions.add(3);
 					positions.add(4);
 
-					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
+					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
 				}
 				else if(newTable.equalsIgnoreCase("stoichiometry")) {
 					positions.add(1);
@@ -221,27 +240,27 @@ public class Merlin3ToMerlin4 {
 					positions.add(3);
 					positions.add(2);
 
-					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
+					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
 				}
 				else if(newTable.equalsIgnoreCase("model_pathway_has_reaction")) {
 					positions.add(2);
 					positions.add(1);
 
-					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
+					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
 				}
 				else if(newTable.equalsIgnoreCase("model_compartment")) {
 					positions.add(1);
 					positions.add(3);
 					positions.add(2);
 
-					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
+					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
 				}
 				else if(newTable.equalsIgnoreCase("model_compartment")) {
 					positions.add(1);
 					positions.add(3);
 					positions.add(2);
 
-					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
+					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
 				}
 				else if(newTable.equalsIgnoreCase("model_gene_has_compartment")) {
 					positions.add(2);
@@ -251,7 +270,7 @@ public class Merlin3ToMerlin4 {
 
 					bits.add(3);
 
-					genericDataRetrieverAndInjectionRespectingOrderAndBitsType(oldTable, newTable, positions, bits);
+					genericDataRetrieverAndInjectionRespectingOrderAndBitsType(oldTable, newTable, positions, bits, error);
 				}
 				else if(newTable.equalsIgnoreCase("model_module")) {
 					positions.add(1);
@@ -263,19 +282,19 @@ public class Merlin3ToMerlin4 {
 					positions.add(4);
 					positions.add(8);
 
-					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
+					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
 				}
 				else if(newTable.equalsIgnoreCase("model_pathway_has_compound")) {
 					positions.add(2);
 					positions.add(1);
 
-					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
+					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
 				}
 				else if(newTable.equalsIgnoreCase("model_modules_has_compound")) {
 					positions.add(2);
 					positions.add(1);
 
-					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
+					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
 				}
 				else if(newTable.equalsIgnoreCase("model_aliases")) {
 					positions.add(1);
@@ -283,14 +302,14 @@ public class Merlin3ToMerlin4 {
 					positions.add(2);
 					positions.add(3);
 
-					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
+					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
 				}
 				else if(newTable.equalsIgnoreCase("model_dictionary")) {
 					positions.add(2);
 					positions.add(1);
 					positions.add(3);
 
-					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
+					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
 				}
 				else if(newTable.equalsIgnoreCase("model_compound")) {
 					positions.add(1);
@@ -306,7 +325,7 @@ public class Merlin3ToMerlin4 {
 					positions.add(10);
 
 					bits.add(11);
-					genericDataRetrieverAndInjectionRespectingOrderAndBitsType(oldTable, newTable, positions, bits);
+					genericDataRetrieverAndInjectionRespectingOrderAndBitsType(oldTable, newTable, positions, bits, error);
 				}
 				else if(newTable.equalsIgnoreCase("model_dblinks")) {
 					positions.add(1);
@@ -315,7 +334,7 @@ public class Merlin3ToMerlin4 {
 					positions.add(4);
 
 
-					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
+					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
 				}
 				else if(newTable.equalsIgnoreCase("model_stoichiometry")) {
 					positions.add(1);
@@ -324,33 +343,33 @@ public class Merlin3ToMerlin4 {
 					positions.add(3);
 					positions.add(2);
 
-					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
+					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
 				}
 				else if(newTable.equalsIgnoreCase("model_reaction_has_model_protein")) {
 					//					positions.add(2);
 					positions.add(3);
 					positions.add(1);
 
-					genericDataRetrieverAndInjectionRespectingOrder("reaction_has_enzyme", newTable, positions);
+					genericDataRetrieverAndInjectionRespectingOrder("reaction_has_enzyme", newTable, positions, error);
 				}
 				else if(newTable.equalsIgnoreCase("model_protein")) {
-					ModelConverter.protein(this.oldConnection, this.newConnection);
+					ModelConverter.protein(this.oldConnection, this.newConnection, error);
 				}
 				else if(newTable.equalsIgnoreCase("model_pathway_has_model_protein")) {
 					//					positions.add(2);
 					positions.add(3);
 					positions.add(1);
 
-					genericDataRetrieverAndInjectionRespectingOrder("pathway_has_enzyme", newTable, positions);
+					genericDataRetrieverAndInjectionRespectingOrder("pathway_has_enzyme", newTable, positions, error);
 				}
 				else if(newTable.equalsIgnoreCase("model_subunit")) {
-					ModelConverter.subunit(this.oldConnection, this.newConnection);
+					ModelConverter.subunit(this.oldConnection, this.newConnection, error);
 				}
 				else if(newTable.equalsIgnoreCase("model_reaction")) {
-					ModelConverter.reaction(this.oldConnection, this.newConnection);
+					ModelConverter.reaction(this.oldConnection, this.newConnection, error);
 				}
 				else if(!newTable.equalsIgnoreCase("model_reaction_labels"))
-					genericDataRetrieverAndInjection(oldTable, newTable);
+					genericDataRetrieverAndInjection(oldTable, newTable, error);
 
 			}
 
@@ -359,17 +378,20 @@ public class Merlin3ToMerlin4 {
 
 	/**
 	 * Convertion of model tables
+	 * @throws InterruptedException 
 	 */
-	public void convertEnzymes() {
+	public void convertEnzymes() throws InterruptedException {
 
 		for(String newTable : this.enzymesTables) {
 
-			System.out.println("Table: " + newTable);
+			logger.info("Table: " + newTable);
 
 			List<Integer> positions = new ArrayList<Integer>();
 			List<Integer> bits = new ArrayList<Integer>();
 
 			String oldTable = newTable.replace("enzymes_annotation_", "");
+			
+			int error = 0;
 
 			if(newTable.equalsIgnoreCase("enzymes_annotation_organism")) {
 				positions.add(1);
@@ -377,13 +399,13 @@ public class Merlin3ToMerlin4 {
 				positions.add(4);
 				positions.add(3);
 
-				genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
+				genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
 			}
 			else if(newTable.equalsIgnoreCase("enzymes_annotation_productRank_has_organism")) {
 				positions.add(2);
 				positions.add(1);
 
-				genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
+				genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
 			}
 			else if(newTable.equalsIgnoreCase("enzymes_annotation_ecNumberRank")) {
 				positions.add(1);
@@ -391,7 +413,7 @@ public class Merlin3ToMerlin4 {
 				positions.add(4);
 				positions.add(2);
 
-				genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
+				genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
 			}
 			else if(newTable.equalsIgnoreCase("enzymes_annotation_productRank")) {
 				positions.add(1);
@@ -399,27 +421,27 @@ public class Merlin3ToMerlin4 {
 				positions.add(4);
 				positions.add(2);
 
-				genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
+				genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
 			}
 			else if(newTable.equalsIgnoreCase("enzymes_annotation_homologues_has_ecNumber")) {
 				positions.add(2);
 				positions.add(1);
 
-				genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
+				genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
 			}
 			else if(newTable.equalsIgnoreCase("enzymes_annotation_ecNumberList")) {
 				positions.add(1);
 				positions.add(3);
 				positions.add(2);
 
-				genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
+				genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
 			}
 			else if(newTable.equalsIgnoreCase("enzymes_annotation_productList")) {
 				positions.add(1);
 				positions.add(3);
 				positions.add(2);
 
-				genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
+				genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
 			}
 			else if(newTable.equalsIgnoreCase("enzymes_annotation_scorerConfig")) {
 				positions.add(4);
@@ -435,7 +457,7 @@ public class Merlin3ToMerlin4 {
 				bits.add(8);
 				bits.add(9);
 
-				genericDataRetrieverAndInjectionRespectingOrderAndBitsType(oldTable, newTable, positions, bits);
+				genericDataRetrieverAndInjectionRespectingOrderAndBitsType(oldTable, newTable, positions, bits, error);
 			}
 			else if(newTable.equalsIgnoreCase("enzymes_annotation_homologyData")) {
 				positions.add(1);
@@ -450,7 +472,7 @@ public class Merlin3ToMerlin4 {
 
 				bits.add(7);
 
-				genericDataRetrieverAndInjectionRespectingOrderAndBitsType(oldTable, newTable, positions, bits);
+				genericDataRetrieverAndInjectionRespectingOrderAndBitsType(oldTable, newTable, positions, bits, error);
 			}
 			else if(newTable.equalsIgnoreCase("enzymes_annotation_homologySetup")) {
 				positions.add(1);
@@ -463,7 +485,7 @@ public class Merlin3ToMerlin4 {
 				positions.add(3);
 				positions.add(7);
 
-				genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
+				genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
 			}
 			else if(newTable.equalsIgnoreCase("enzymes_annotation_homologues")) {
 				positions.add(1);
@@ -477,7 +499,7 @@ public class Merlin3ToMerlin4 {
 
 				bits.add(8);
 
-				genericDataRetrieverAndInjectionRespectingOrderAndBitsType(oldTable, newTable, positions, bits);
+				genericDataRetrieverAndInjectionRespectingOrderAndBitsType(oldTable, newTable, positions, bits, error);
 			}
 			else if(newTable.equalsIgnoreCase("enzymes_annotation_geneHomology_has_homologues")) {
 				positions.add(1);
@@ -487,13 +509,13 @@ public class Merlin3ToMerlin4 {
 				positions.add(4);
 				positions.add(3);
 
-				genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions);
+				genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
 			}
 			else if(newTable.equalsIgnoreCase("enzymes_annotation_geneHomology")) {
-				EnzymesConverter.geneHomology(this.oldConnection, this.newConnection);
+				EnzymesConverter.geneHomology(this.oldConnection, this.newConnection, error);
 			}
 			else
-				genericDataRetrieverAndInjection(oldTable, newTable);
+				genericDataRetrieverAndInjection(oldTable, newTable, error);
 
 		}
 
@@ -501,10 +523,15 @@ public class Merlin3ToMerlin4 {
 
 	/**
 	 * Convertion of interpro tables
+	 * @throws InterruptedException 
 	 */
-	public void convertInterpro() {
+	public void convertInterpro() throws InterruptedException {
 
 		for(String newTable : this.interproTables) {
+			
+			int error = 0;
+
+			logger.info("Table: " + newTable);
 
 			List<Integer> positions = new ArrayList<Integer>();
 
@@ -512,13 +539,13 @@ public class Merlin3ToMerlin4 {
 				positions.add(2);
 				positions.add(1);
 
-				genericDataRetrieverAndInjectionRespectingOrder(newTable, newTable, positions);
+				genericDataRetrieverAndInjectionRespectingOrder(newTable, newTable, positions, error);
 			}
 			else if(newTable.equalsIgnoreCase("interpro_result_has_model")){
 				positions.add(2);
 				positions.add(1);
 
-				genericDataRetrieverAndInjectionRespectingOrder(newTable, newTable, positions);
+				genericDataRetrieverAndInjectionRespectingOrder(newTable, newTable, positions, error);
 			}
 			else if(newTable.equalsIgnoreCase("interpro_xRef")){
 				positions.add(1);
@@ -528,7 +555,7 @@ public class Merlin3ToMerlin4 {
 				positions.add(4);
 				positions.add(6);
 
-				genericDataRetrieverAndInjectionRespectingOrder(newTable, newTable, positions);
+				genericDataRetrieverAndInjectionRespectingOrder(newTable, newTable, positions, error);
 			}
 			else if(newTable.equalsIgnoreCase("interpro_location")){
 				positions.add(1);
@@ -543,7 +570,7 @@ public class Merlin3ToMerlin4 {
 				positions.add(2);
 				positions.add(11);
 
-				genericDataRetrieverAndInjectionRespectingOrder(newTable, newTable, positions);
+				genericDataRetrieverAndInjectionRespectingOrder(newTable, newTable, positions, error);
 			}
 			else if(newTable.equalsIgnoreCase("interpro_results")){
 				positions.add(1);
@@ -554,7 +581,7 @@ public class Merlin3ToMerlin4 {
 				positions.add(3);
 				positions.add(7);
 
-				genericDataRetrieverAndInjectionRespectingOrder(newTable, newTable, positions);
+				genericDataRetrieverAndInjectionRespectingOrder(newTable, newTable, positions, error);
 			}
 			else if(newTable.equalsIgnoreCase("interpro_result")){
 				positions.add(1);
@@ -570,10 +597,10 @@ public class Merlin3ToMerlin4 {
 				positions.add(2);
 				positions.add(12);
 
-				genericDataRetrieverAndInjectionRespectingOrder(newTable, newTable, positions);
+				genericDataRetrieverAndInjectionRespectingOrder(newTable, newTable, positions, error);
 			}
 			else
-				genericDataRetrieverAndInjection(newTable, newTable);
+				genericDataRetrieverAndInjection(newTable, newTable, error);
 
 		}
 	}
@@ -581,8 +608,9 @@ public class Merlin3ToMerlin4 {
 	/**
 	 * @param oldTable
 	 * @param newTable
+	 * @throws InterruptedException 
 	 */
-	public void genericDataRetrieverAndInjection(String oldTable, String newTable) {
+	public void genericDataRetrieverAndInjection(String oldTable, String newTable, int error) throws InterruptedException {
 
 		String query = "";
 
@@ -635,6 +663,24 @@ public class Merlin3ToMerlin4 {
 					//		System.out.println("Primary key constraint violation in table " + newTable);
 					//		e.printStackTrace();
 				}
+				catch (CommunicationsException e) {
+
+					if(error < LIMIT) {
+						
+						logger.error("Communications exception! Retrying...");
+
+						TimeUnit.MINUTES.sleep(1);
+
+						error++;
+						
+						this.oldConnection = new Connection(this.oldConnection.getDatabaseAccess());
+						this.newConnection = new Connection(this.newConnection.getDatabaseAccess());
+								
+						genericDataRetrieverAndInjection(oldTable, newTable, error);
+					}
+					//					System.out.println("Primary key constraint violation in table " + newTable);
+					//					e.printStackTrace();
+				}
 			}
 
 			rs.close();
@@ -657,8 +703,9 @@ public class Merlin3ToMerlin4 {
 	/**
 	 * @param oldTable
 	 * @param newTable
+	 * @throws InterruptedException 
 	 */
-	public void genericDataRetrieverAndInjectionRespectingOrder(String oldTable, String newTable, List<Integer> positions) {
+	public void genericDataRetrieverAndInjectionRespectingOrder(String oldTable, String newTable, List<Integer> positions, int error) throws InterruptedException {
 
 		try {
 			Map<Integer, List<Integer>> alreadyUploaded = new HashMap<>();
@@ -721,6 +768,24 @@ public class Merlin3ToMerlin4 {
 					//					System.out.println("Primary key constraint violation in table " + newTable);
 					//											e.printStackTrace();
 				}
+				catch (CommunicationsException e) {
+
+					if(error < LIMIT) {
+						
+						logger.error("Communications exception! Retrying...");
+
+						TimeUnit.MINUTES.sleep(1);
+
+						error++;
+						
+						this.oldConnection = new Connection(this.oldConnection.getDatabaseAccess());
+						this.newConnection = new Connection(this.newConnection.getDatabaseAccess());
+						
+						genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
+					}
+					//					System.out.println("Primary key constraint violation in table " + newTable);
+					//					e.printStackTrace();
+				}
 				//				}
 			}
 
@@ -741,8 +806,9 @@ public class Merlin3ToMerlin4 {
 	/**
 	 * @param oldTable
 	 * @param newTable
+	 * @throws InterruptedException 
 	 */
-	public void genericDataRetrieverAndInjectionRespectingOrderAndBitsType(String oldTable, String newTable, List<Integer> positions, List<Integer> bitsType) {
+	public void genericDataRetrieverAndInjectionRespectingOrderAndBitsType(String oldTable, String newTable, List<Integer> positions, List<Integer> bitsType, int error) throws InterruptedException {
 
 		try {
 			Statement oldStatement = oldConnection.createStatement();
@@ -777,13 +843,31 @@ public class Merlin3ToMerlin4 {
 					}
 
 					query += ");";
-					
+
 					newStatement.execute(query);
 				} catch (JdbcSQLIntegrityConstraintViolationException e) {
 					//					System.out.println("Primary key constraint violation in table " + newTable);
 					//					e.printStackTrace();
 				}
 				catch (MySQLIntegrityConstraintViolationException e) {
+					//					System.out.println("Primary key constraint violation in table " + newTable);
+					//					e.printStackTrace();
+				}
+				catch (CommunicationsException e) {
+
+					if(error < LIMIT) {
+						
+						logger.error("Communications exception! Retrying...");
+
+						TimeUnit.MINUTES.sleep(1);
+
+						error++;
+						
+						this.oldConnection = new Connection(this.oldConnection.getDatabaseAccess());
+						this.newConnection = new Connection(this.newConnection.getDatabaseAccess());
+						
+						genericDataRetrieverAndInjectionRespectingOrderAndBitsType(oldTable, newTable, positions, bitsType, error);
+					}
 					//					System.out.println("Primary key constraint violation in table " + newTable);
 					//					e.printStackTrace();
 				}

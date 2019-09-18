@@ -5,8 +5,13 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.h2.jdbc.JdbcSQLIntegrityConstraintViolationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.mysql.jdbc.exceptions.jdbc4.CommunicationsException;
 
 import es.uvigo.ei.aibench.workbench.Workbench;
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Connection;
@@ -15,11 +20,15 @@ import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Enumerators.
 
 public class EnzymesConverter {
 
+	private static final Logger logger = LoggerFactory.getLogger(EnzymesConverter.class);
+	private static final int LIMIT = 3;
+	
 	/**
 	 * @param oldTable
 	 * @param newTable
+	 * @throws InterruptedException 
 	 */
-	public static void geneHomology(Connection oldConnection, Connection newConnection) {
+	public static void geneHomology(Connection oldConnection, Connection newConnection, int error) throws InterruptedException {
 
 		try {
 			Statement oldStatement = oldConnection.createStatement();
@@ -89,7 +98,24 @@ public class EnzymesConverter {
 					//					System.out.println("Primary key constraint violation in table " + newTable);
 					//					e.printStackTrace();
 				}
+				catch (CommunicationsException e) {
 
+					if(error < LIMIT) {
+						
+						logger.error("Communications exception! Retrying...");
+
+						TimeUnit.MINUTES.sleep(1);
+
+						error++;
+						
+						oldConnection = new Connection(oldConnection.getDatabaseAccess());
+						newConnection = new Connection(newConnection.getDatabaseAccess());
+						
+						geneHomology(oldConnection, newConnection, error);
+					}
+					//					System.out.println("Primary key constraint violation in table " + newTable);
+					//					e.printStackTrace();
+				}
 			}
 
 			rs.close();
