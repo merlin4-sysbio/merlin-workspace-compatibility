@@ -19,13 +19,14 @@ import org.slf4j.LoggerFactory;
 import com.mysql.jdbc.exceptions.jdbc4.CommunicationsException;
 import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
 
+import es.uvigo.ei.aibench.workbench.Workbench;
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Connection;
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.DatabaseUtilities;
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Enumerators.DatabaseType;
 import pt.uminho.ceb.biosystems.merlin.utilities.Enumerators.SequenceType;
 
 public class ModelConverter {
-	
+
 	private static final Logger logger = LoggerFactory.getLogger(Merlin3ToMerlin4.class);
 	private static final int LIMIT = 3;
 
@@ -94,16 +95,16 @@ public class ModelConverter {
 				catch (CommunicationsException e) {
 
 					if(error < LIMIT) {
-						
+
 						logger.error("Communications exception! Retrying...");
 
 						TimeUnit.MINUTES.sleep(1);
 
 						error++;
-						
+
 						oldConnection = new Connection(oldConnection.getDatabaseAccess());
 						newConnection = new Connection(newConnection.getDatabaseAccess());
-						
+
 						subunit(oldConnection, newConnection, error);
 					}
 					//					System.out.println("Primary key constraint violation in table " + newTable);
@@ -144,73 +145,86 @@ public class ModelConverter {
 
 			while(rs.next()) {
 
-				ResultSet rs2 = newStatement.executeQuery("SELECT idreaction_label FROM model_reaction_labels WHERE name = " + str(rs.getString(2), type) + ";");
+				try {
+					ResultSet rs2 = newStatement.executeQuery("SELECT idreaction_label FROM model_reaction_labels WHERE name = " + str(rs.getString(2), type) + ";");
 
-				Integer labelId = null;
+					Integer labelId = null;
 
-				if(rs2.next())
-					labelId = rs2.getInt(1);
+					if(rs2.next())
+						labelId = rs2.getInt(1);
 
-				String isGenericColumnName = "isGeneric";
-				String isNonEnzymaticColumnName = "isNonEnzymatic";
-				String isSpontaneousColumnName = "isSpontaneous";
+					String isGenericColumnName = "isGeneric";
+					String isNonEnzymaticColumnName = "isNonEnzymatic";
+					String isSpontaneousColumnName = "isSpontaneous";
 
-				if(newConnection.getDatabase_type().equals(DatabaseType.H2)) {
-					isGenericColumnName = "isgeneric";
-					isNonEnzymaticColumnName = "isnonenzymatic";
-					isSpontaneousColumnName = "isspontaneous";
-				}
-
-				if(labelId == null) {
-					newStatement.execute("INSERT INTO model_reaction_labels (equation, " + isGenericColumnName + ", " + isNonEnzymaticColumnName + ", " + isSpontaneousColumnName + ", name, source) VALUES ("
-							+ str(rs.getString(3), type) + ", " + rs.getInt(7) + ", " + rs.getInt(9) + ", " + rs.getInt(8) + ", " + str(rs.getString(2), type) + ", " + str(rs.getString(10), type) +");");
-
-					ResultSet rs3 = newStatement.executeQuery("SELECT LAST_INSERT_ID()");
-					rs3.next();
-
-					labelId = rs3.getInt(1);
-
-					rs3.close();
-				}
-
-				rs2.close();
-
-				String inModelColumnName = "inModel";
-				String lowerBoundColumnName = "lowerBound";
-				String upperBoundColumnName = "upperBound";
-
-				if(newConnection.getDatabase_type().equals(DatabaseType.H2)) {
-					inModelColumnName = "inmodel";
-					lowerBoundColumnName = "lowerbound";
-					upperBoundColumnName = "upperbound";
-				}
-
-				Integer compartment = rs.getInt(12);
-				
-				String lowerBound = "'-999999'";
-				
-				if(rs.getString(14) == null) {
-					
-					Boolean isReversible = rs.getBoolean("reversible");
-					
-					if(isReversible != null) {
-						
-						if(!isReversible)
-							lowerBound = "'0'";
+					if(newConnection.getDatabase_type().equals(DatabaseType.H2)) {
+						isGenericColumnName = "isgeneric";
+						isNonEnzymaticColumnName = "isnonenzymatic";
+						isSpontaneousColumnName = "isspontaneous";
 					}
-				}
-				else {
-					lowerBound = str(rs.getString(14), type);
-				}
-					
 
-				if(compartment == 1)
-					compartment = null;
+					if(labelId == null) {
+						newStatement.execute("INSERT INTO model_reaction_labels (equation, " + isGenericColumnName + ", " + isNonEnzymaticColumnName + ", " + isSpontaneousColumnName + ", name, source) VALUES ("
+								+ str(rs.getString(3), type) + ", " + rs.getInt(7) + ", " + rs.getInt(9) + ", " + rs.getInt(8) + ", " + str(rs.getString(2), type) + ", " + str(rs.getString(10), type) +");");
 
-				newStatement.execute("INSERT INTO model_reaction (idreaction, boolean_rule, " + inModelColumnName + ", " + lowerBoundColumnName + ", notes, " + upperBoundColumnName + 
-						", compartment_idcompartment, model_reaction_labels_idreaction_label) VALUES ("
-						+ rs.getInt(1) + ", " + str(rs.getString(5), type) + ", " + rs.getInt(6) + ", " + lowerBound + ", " + str(rs.getString(13), type) + ", "
-						+ str(rs.getString(15), type) + ", " + compartment + ", " + labelId + ");");
+						ResultSet rs3 = newStatement.executeQuery("SELECT LAST_INSERT_ID()");
+						rs3.next();
+
+						labelId = rs3.getInt(1);
+
+						rs3.close();
+					}
+
+					rs2.close();
+
+					String inModelColumnName = "inModel";
+					String lowerBoundColumnName = "lowerBound";
+					String upperBoundColumnName = "upperBound";
+
+					if(newConnection.getDatabase_type().equals(DatabaseType.H2)) {
+						inModelColumnName = "inmodel";
+						lowerBoundColumnName = "lowerbound";
+						upperBoundColumnName = "upperbound";
+					}
+
+					Integer compartment = rs.getInt(12);
+
+					String lowerBound = "'-999999'";
+					String upperBound = "'999999'";
+
+					if(rs.getString(14) == null) {
+
+						Boolean isReversible = rs.getBoolean("reversible");
+
+						if(isReversible != null) {
+
+							if(!isReversible)
+								lowerBound = "'0'";
+						}
+					}
+					else {
+						lowerBound = str(rs.getString(14), type);
+					}
+
+					if(rs.getString(15) != null)
+						upperBound = str(rs.getString(15), type);
+
+					if(compartment == 1)
+						compartment = null;
+
+					newStatement.execute("INSERT INTO model_reaction (idreaction, boolean_rule, " + inModelColumnName + ", " + lowerBoundColumnName + ", notes, " + upperBoundColumnName + 
+							", compartment_idcompartment, model_reaction_labels_idreaction_label) VALUES ("
+							+ rs.getInt(1) + ", " + str(rs.getString(5), type) + ", " + rs.getInt(6) + ", " + lowerBound + ", " + str(rs.getString(13), type) + ", "
+							+ upperBound + ", " + compartment + ", " + labelId + ");");
+				} 
+				catch (JdbcSQLIntegrityConstraintViolationException e) {
+					//					System.out.println("Primary key constraint violation in table " + newTable);
+					//											e.printStackTrace();
+				}
+				catch (MySQLIntegrityConstraintViolationException e) {
+					//					Workbench.getInstance().error(e);
+					e.printStackTrace();
+				}
 
 			}
 
@@ -223,16 +237,16 @@ public class ModelConverter {
 		catch (CommunicationsException e) {
 
 			if(error < LIMIT) {
-				
+
 				logger.error("Communications exception! Retrying...");
 
 				TimeUnit.MINUTES.sleep(1);
 
 				error++;
-				
+
 				oldConnection = new Connection(oldConnection.getDatabaseAccess());
 				newConnection = new Connection(newConnection.getDatabaseAccess());
-				
+
 				reaction(oldConnection, newConnection, error);
 			}
 			//					System.out.println("Primary key constraint violation in table " + newTable);
@@ -264,34 +278,46 @@ public class ModelConverter {
 
 			while(rs.next()) {
 
-				Integer proteinId = rs.getInt(1);
+				try {
 
-				ResultSet rs2 = oldStatement2.executeQuery("SELECT * FROM enzyme WHERE protein_idprotein = " + proteinId + " ;");
+					Integer proteinId = rs.getInt(1);
 
-				String ec = null;
-				String source = null;
-				Integer inModel = null;
+					ResultSet rs2 = oldStatement2.executeQuery("SELECT * FROM enzyme WHERE protein_idprotein = " + proteinId + " ;");
 
-				if(rs2.next()) {
-					ec = str(rs2.getString(1), type);
-					source = str(rs2.getString(4), type);
-					inModel = rs2.getInt(3);
+					String ec = null;
+					String source = null;
+					Integer inModel = null;
+
+					if(rs2.next()) {
+						ec = str(rs2.getString(1), type);
+						source = str(rs2.getString(4), type);
+						inModel = rs2.getInt(3);
+					}
+
+					String inModelColumnName = "inModel";
+
+					if(newConnection.getDatabase_type().equals(DatabaseType.H2))
+						inModelColumnName = "inmodel";
+
+					String query = "INSERT INTO model_protein (idprotein, class, ecnumber, " + inModelColumnName + ", inchi, molecular_weight, molecular_weight_exp, "
+							+ "molecular_weight_kd, molecular_weight_seq, name, pi, source)  VALUES (" + proteinId + ", " + str(rs.getString(3), type) 
+							+ ", " + ec + ", " + inModel + ", " + str(rs.getString(4), type) + ", " + str(rs.getString(5), type) + ", "
+							+ str(rs.getString(6), type) + ", " + str(rs.getString(7), type) + ", " + str(rs.getString(8), type) + ", " + str(rs.getString(2), type) 
+							+ ", " + str(rs.getString(9), type) + ", " + source + ");";
+
+					newStatement.execute(query);
+
+					rs2.close();
+				}
+				catch (JdbcSQLIntegrityConstraintViolationException e) {
+					//					System.out.println("Primary key constraint violation in table " + newTable);
+					//											e.printStackTrace();
+				}
+				catch (MySQLIntegrityConstraintViolationException e) {
+					//				Workbench.getInstance().error(e);
+					e.printStackTrace();
 				}
 
-				String inModelColumnName = "inModel";
-
-				if(newConnection.getDatabase_type().equals(DatabaseType.H2))
-					inModelColumnName = "inmodel";
-
-				String query = "INSERT INTO model_protein (idprotein, class, ecnumber, " + inModelColumnName + ", inchi, molecular_weight, molecular_weight_exp, "
-						+ "molecular_weight_kd, molecular_weight_seq, name, pi, source)  VALUES (" + proteinId + ", " + str(rs.getString(3), type) 
-						+ ", " + ec + ", " + inModel + ", " + str(rs.getString(4), type) + ", " + str(rs.getString(5), type) + ", "
-						+ str(rs.getString(6), type) + ", " + str(rs.getString(7), type) + ", " + str(rs.getString(8), type) + ", " + str(rs.getString(2), type) 
-						+ ", " + str(rs.getString(9), type) + ", " + source + ");";
-
-				newStatement.execute(query);
-
-				rs2.close();
 			}
 
 			rs.close();
@@ -303,16 +329,16 @@ public class ModelConverter {
 		catch (CommunicationsException e) {
 
 			if(error < LIMIT) {
-				
+
 				logger.error("Communications exception! Retrying...");
 
 				TimeUnit.MINUTES.sleep(1);
 
 				error++;
-				
+
 				oldConnection = new Connection(oldConnection.getDatabaseAccess());
 				newConnection = new Connection(newConnection.getDatabaseAccess());
-				
+
 				protein(oldConnection, newConnection, error);
 			}
 			//					System.out.println("Primary key constraint violation in table " + newTable);
@@ -391,19 +417,27 @@ public class ModelConverter {
 			newStatement.close();
 
 		} 
+		catch (JdbcSQLIntegrityConstraintViolationException e) {
+			//					System.out.println("Primary key constraint violation in table " + newTable);
+			//											e.printStackTrace();
+		}
+		catch (MySQLIntegrityConstraintViolationException e) {
+			//	Workbench.getInstance().error(e);
+			e.printStackTrace();
+		}
 		catch (CommunicationsException e) {
 
 			if(error < LIMIT) {
-				
+
 				logger.error("Communications exception! Retrying...");
 
 				TimeUnit.MINUTES.sleep(1);
 
 				error++;
-				
+
 				oldConnection = new Connection(oldConnection.getDatabaseAccess());
 				newConnection = new Connection(newConnection.getDatabaseAccess());
-				
+
 				sequence(oldConnection, newConnection, error);
 			}
 			//					System.out.println("Primary key constraint violation in table " + newTable);
@@ -413,7 +447,7 @@ public class ModelConverter {
 			//		Workbench.getInstance().error(e);
 			e.printStackTrace();
 		}
-		
+
 
 	}
 

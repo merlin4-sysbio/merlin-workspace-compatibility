@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.mysql.jdbc.exceptions.jdbc4.CommunicationsException;
+import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
 
 import es.uvigo.ei.aibench.workbench.Workbench;
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Connection;
@@ -97,6 +98,10 @@ public class EnzymesConverter {
 				} catch (JdbcSQLIntegrityConstraintViolationException e) {
 					//					System.out.println("Primary key constraint violation in table " + newTable);
 					//					e.printStackTrace();
+				}
+				catch (MySQLIntegrityConstraintViolationException e) {
+					//	Workbench.getInstance().error(e);
+					e.printStackTrace();
 				}
 				catch (CommunicationsException e) {
 
