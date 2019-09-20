@@ -27,7 +27,7 @@ import pt.uminho.ceb.biosystems.merlin.utilities.Enumerators.SequenceType;
 
 public class ModelConverter {
 
-	private static final Logger logger = LoggerFactory.getLogger(Merlin3ToMerlin4.class);
+	private static final Logger logger = LoggerFactory.getLogger(ModelConverter.class);
 	private static final int LIMIT = 3;
 
 	/**
@@ -223,7 +223,7 @@ public class ModelConverter {
 				}
 				catch (MySQLIntegrityConstraintViolationException e) {
 					//					Workbench.getInstance().error(e);
-					e.printStackTrace();
+//					e.printStackTrace();
 				}
 
 			}
@@ -423,7 +423,7 @@ public class ModelConverter {
 		}
 		catch (MySQLIntegrityConstraintViolationException e) {
 			//	Workbench.getInstance().error(e);
-			e.printStackTrace();
+//			e.printStackTrace();
 		}
 		catch (CommunicationsException e) {
 
