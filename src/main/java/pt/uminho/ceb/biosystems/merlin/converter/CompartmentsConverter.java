@@ -1,4 +1,4 @@
-package pt.uminho.ceb.biosystems.merlin.merlin_workspace_compatibility.newMethod;
+package pt.uminho.ceb.biosystems.merlin.converter;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;

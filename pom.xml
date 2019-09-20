@@ -50,7 +50,7 @@
 						</goals>
 						<configuration>
 							<!-- <outputDirectory>../merlin-core/plugins_bin/merlin-draft-reconstruction</outputDirectory> -->
-							<outputDirectory>../merlin-aibench/plugins_bin/merlin-automatic-annotation</outputDirectory>
+							<outputDirectory>../merlin-aibench/plugins_bin/merlin-workspace_compatibility</outputDirectory>
 							<resources>
 								<resource>
 									<directory>target/classes</directory>
@@ -99,4 +99,16 @@
 			<version>4.0.1-SNAPSHOT</version>
 		</dependency>
 	</dependencies>
+	
+	
+	<distributionManagement>
+		<snapshotRepository>
+			<id>biosystems-snapshots</id>
+			<url>https://nexus.bio.di.uminho.pt/content/repositories/biosystems-snapshots</url>
+		</snapshotRepository>
+		<repository>
+			<id>biosystems-releases</id>
+			<url>https://nexus.bio.di.uminho.pt/content/repositories/biosystems-releases</url>
+		</repository>
+	</distributionManagement>
 </project>

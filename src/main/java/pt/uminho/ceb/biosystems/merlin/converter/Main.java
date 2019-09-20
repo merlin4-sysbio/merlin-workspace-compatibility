@@ -1,4 +1,4 @@
-package pt.uminho.ceb.biosystems.merlin.merlin_workspace_compatibility.newMethod;
+package pt.uminho.ceb.biosystems.merlin.converter;
 
 import java.io.IOException;
 
@@ -18,6 +18,8 @@ public class Main {
 		String old_port = "2401";
 		String old_username = "merlindev";
 		DatabaseType old_type = DatabaseType.MYSQL;
+		
+		System.exit(1);
 		
 //		String new_host = "C:\\Users\\BioSystems\\merlin4\\merlin-aibench";
 //		String new_databaseName = "converter_test";
@@ -42,6 +44,9 @@ public class Main {
 		Connection newConnection = new Connection(newAccess);
 		
 		Merlin3ToMerlin4 converter = new Merlin3ToMerlin4(oldConnection, newConnection);
+		
+		oldConnection.closeConnection();
+		newConnection.closeConnection();
 		
 		try {
 			converter.start();

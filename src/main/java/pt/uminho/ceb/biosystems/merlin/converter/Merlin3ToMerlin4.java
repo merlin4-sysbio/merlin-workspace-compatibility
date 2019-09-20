@@ -1,5 +1,8 @@
-package pt.uminho.ceb.biosystems.merlin.merlin_workspace_compatibility.newMethod;
+package pt.uminho.ceb.biosystems.merlin.converter;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -27,12 +30,16 @@ import pt.uminho.ceb.biosystems.merlin.utilities.io.FileUtils;
 
 public class Merlin3ToMerlin4 {
 
-	Connection oldConnection;
-	Connection newConnection;
-	List<String> enzymesTables;
-	List<String> compartmentsTables;
-	List<String> interproTables;
-	List<String> modelTables;
+	private Connection oldConnection;
+	private Connection newConnection;
+	private List<String> enzymesTables;
+	private List<String> compartmentsTables;
+	private List<String> interproTables;
+	private List<String> modelTables;
+	private Integer counter = 0;
+	
+	
+	private PropertyChangeSupport changes;
 
 	private static final Logger logger = LoggerFactory.getLogger(Merlin3ToMerlin4.class);
 	private static final int LIMIT = 3;
@@ -41,6 +48,8 @@ public class Merlin3ToMerlin4 {
 
 		this.oldConnection = oldConnection;
 		this.newConnection = newConnection;
+		
+		this.changes = new PropertyChangeSupport(this);
 
 	}
 
@@ -50,6 +59,11 @@ public class Merlin3ToMerlin4 {
 			logger.info("reading tables names...");
 
 			readTablesNames();
+			
+			int total = this.enzymesTables.size() + this.compartmentsTables.size() + this.modelTables.size() + this.interproTables.size() + 1;
+			
+			this.changes.firePropertyChange("size", null, total);
+			this.changes.firePropertyChange("message", null, "importing and converting data, this process may take a while");
 
 			logger.info("importing projects table...");
 
@@ -118,6 +132,9 @@ public class Merlin3ToMerlin4 {
 
 		bits.add(3);
 		genericDataRetrieverAndInjectionRespectingOrderAndBitsType("projects", "projects", positions, bits, 0);
+		
+		counter++;
+		this.changes.firePropertyChange("tablesCounter", null, counter);
 	}
 
 	/**
@@ -153,6 +170,9 @@ public class Merlin3ToMerlin4 {
 			}
 			else
 				genericDataRetrieverAndInjection(newTable.replace("compartments_annotation_", ""), newTable, error);
+			
+			counter++;
+			this.changes.firePropertyChange("tablesCounter", null, counter);
 
 		}
 	}
@@ -230,15 +250,6 @@ public class Merlin3ToMerlin4 {
 					positions.add(5);
 					positions.add(3);
 					positions.add(4);
-
-					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
-				}
-				else if(newTable.equalsIgnoreCase("stoichiometry")) {
-					positions.add(1);
-					positions.add(5);
-					positions.add(4);
-					positions.add(3);
-					positions.add(2);
 
 					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
 				}
@@ -343,7 +354,7 @@ public class Merlin3ToMerlin4 {
 					positions.add(3);
 					positions.add(2);
 
-					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
+					ModelConverter.stoichiometry(this.oldConnection, this.newConnection, positions, error);
 				}
 				else if(newTable.equalsIgnoreCase("model_reaction_has_model_protein")) {
 					//					positions.add(2);
@@ -370,6 +381,9 @@ public class Merlin3ToMerlin4 {
 				}
 				else if(!newTable.equalsIgnoreCase("model_reaction_labels"))
 					genericDataRetrieverAndInjection(oldTable, newTable, error);
+				
+				counter++;
+				this.changes.firePropertyChange("tablesCounter", null, counter);
 
 			}
 
@@ -516,6 +530,9 @@ public class Merlin3ToMerlin4 {
 			}
 			else
 				genericDataRetrieverAndInjection(oldTable, newTable, error);
+			
+			counter++;
+			this.changes.firePropertyChange("tablesCounter", null, counter);
 
 		}
 
@@ -601,6 +618,9 @@ public class Merlin3ToMerlin4 {
 			}
 			else
 				genericDataRetrieverAndInjection(newTable, newTable, error);
+			
+			counter++;
+			this.changes.firePropertyChange("tablesCounter", null, counter);
 
 		}
 	}
@@ -695,7 +715,7 @@ public class Merlin3ToMerlin4 {
 				logger.warn("This database does not contain any protein_complex table!");
 			else
 				System.out.print(query);
-			//			Workbench.getInstance().error(e);
+			Workbench.getInstance().error(e);
 			e.printStackTrace();
 		}
 	}
@@ -720,20 +740,7 @@ public class Merlin3ToMerlin4 {
 
 			ResultSet rs = oldStatement.executeQuery("SELECT * FROM " + oldTable + ";");
 
-			//			ResultSet rs2 = newStatement.executeQuery("SELECT * FROM "+ newTable +";");
-
-			//			while(rs2.next()) {
-			//				if(!alreadyUploaded.containsKey(rs2.getInt(1)))
-			//					alreadyUploaded.put(rs2.getInt(1), new ArrayList<>());
-			//				
-			//				alreadyUploaded.get(rs2.getInt(1)).add(rs2.getInt(2));
-			//			}
-			//
-			//			rs2.close();
-
 			while(rs.next()) {
-
-				//				if(!alreadyUploaded.containsKey(rs.getInt(1)) || !alreadyUploaded.get(rs.getInt(1)).contains(rs.getInt(2))) {
 
 				try {
 					String query = "INSERT INTO " + newTable + " VALUES (";
@@ -798,7 +805,7 @@ public class Merlin3ToMerlin4 {
 
 			System.out.println(newTable);
 
-			//			Workbench.getInstance().error(e);
+			Workbench.getInstance().error(e);
 			e.printStackTrace();
 		}
 	}
@@ -882,8 +889,28 @@ public class Merlin3ToMerlin4 {
 
 			System.out.println(newTable);
 
-			//			Workbench.getInstance().error(e);
+			Workbench.getInstance().error(e);
 			e.printStackTrace();
 		}
 	}
+	
+	/**
+	 * @param l
+	 */
+	public void addPropertyChangeListener(PropertyChangeListener l) {
+		changes.addPropertyChangeListener(l);
+	}
+
+	/**
+	 * @param l
+	 */
+	public void removePropertyChangeListener(PropertyChangeListener l) {
+		changes.removePropertyChangeListener(l);
+	}
+
+	public void propertyChange(PropertyChangeEvent evt) {
+
+		this.changes.firePropertyChange(evt.getPropertyName(), evt.getOldValue(), evt.getNewValue());				
+	}
+
 }

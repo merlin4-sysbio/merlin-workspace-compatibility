@@ -1,4 +1,4 @@
-package pt.uminho.ceb.biosystems.merlin.merlin_workspace_compatibility.newMethod;
+package pt.uminho.ceb.biosystems.merlin.converter;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -130,7 +130,7 @@ public class EnzymesConverter {
 			newStatement.close();
 		} 
 		catch (SQLException e) {
-			//			Workbench.getInstance().error(e);
+			Workbench.getInstance().error(e);
 			e.printStackTrace();
 		}
 	}
