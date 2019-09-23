@@ -19,8 +19,6 @@ public class Main {
 		String old_username = "merlindev";
 		DatabaseType old_type = DatabaseType.MYSQL;
 		
-		System.exit(1);
-		
 //		String new_host = "C:\\Users\\BioSystems\\merlin4\\merlin-aibench";
 //		String new_databaseName = "converter_test";
 //		String new_password = "password";

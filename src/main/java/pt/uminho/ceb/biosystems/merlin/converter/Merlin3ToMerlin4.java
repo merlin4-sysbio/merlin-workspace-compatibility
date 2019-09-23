@@ -67,7 +67,7 @@ public class Merlin3ToMerlin4 {
 
 			logger.info("importing projects table...");
 
-			convertProjects();
+//			convertProjects();
 
 			logger.info("importing compartments tables...");
 
@@ -75,15 +75,15 @@ public class Merlin3ToMerlin4 {
 
 			logger.info("importing interpro tables...");
 
-			convertInterpro();
+//			convertInterpro();
 
 			logger.info("importing model tables...");
 
-			convertModel();
+//			convertModel();
 
 			logger.info("importing enzymes tables...");
 
-			convertEnzymes();
+//			convertEnzymes();
 		} 
 		catch (InterruptedException e) {
 			Workbench.getInstance().error(e);
@@ -164,9 +164,9 @@ public class Merlin3ToMerlin4 {
 			else if(newTable.equalsIgnoreCase("compartments_annotation_compartments")){
 				positions.add(1);
 				positions.add(3);
-				positions.add(3);
+				positions.add(2);
 
-				genericDataRetrieverAndInjectionRespectingOrder("compartments", newTable, positions, error);
+				genericDataRetrieverAndInjectionRespectingOrder("compartment", newTable, positions, error);
 			}
 			else
 				genericDataRetrieverAndInjection(newTable.replace("compartments_annotation_", ""), newTable, error);
