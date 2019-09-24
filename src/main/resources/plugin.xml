@@ -19,7 +19,7 @@
 
 		<extension uid="aibench.workbench" name="aibench.workbench.view">
 			<icon-operation operation="operations.ConverterGUI.ID"
-				icon="icons/Lifecycle/Synchronize.png" />
+				icon="icons/Lifecycle/upload.png" />
 		</extension>
 		
 		<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
