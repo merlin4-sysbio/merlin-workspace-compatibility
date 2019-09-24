@@ -50,7 +50,7 @@
 						</goals>
 						<configuration>
 							<!-- <outputDirectory>../merlin-core/plugins_bin/merlin-draft-reconstruction</outputDirectory> -->
-							<outputDirectory>../merlin-aibench/plugins_bin/merlin-workspace_compatibility</outputDirectory>
+							<outputDirectory>../merlin-aibench/plugins_bin/merlin-workspace-compatibility</outputDirectory>
 							<resources>
 								<resource>
 									<directory>target/classes</directory>
