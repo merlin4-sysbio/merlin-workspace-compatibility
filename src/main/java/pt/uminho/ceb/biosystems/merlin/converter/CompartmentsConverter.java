@@ -38,7 +38,7 @@ public class CompartmentsConverter {
 					date =  str(rs.getString(4), newConnection.getDatabase_type());
 
 				if(rs.getString(3) != null)
-					locus = str(rs.getString(2), newConnection.getDatabase_type());
+					locus = str(rs.getString(3), newConnection.getDatabase_type());
 
 				String query = "INSERT INTO compartments_annotation_reports VALUES (" + rs.getInt(1) + ", " + 
 						date + ", " + locus + ");";
