@@ -77,7 +77,7 @@ public class ConverterGUI implements PropertyChangeListener {
 
 	@Port(direction=Direction.INPUT, name="merlin 3 home directory", description="select the home directory of merlin 3", order=3)
 	public void setNewProject(File merlinDirectory) {
-
+		
 		try {
 			
 			this.startTime = GregorianCalendar.getInstance().getTimeInMillis();
@@ -127,13 +127,13 @@ public class ConverterGUI implements PropertyChangeListener {
 			
 			this.executeChange(3);
 			
+			Workbench.getInstance().info("workspace successfully imported!");
 		} 
 		catch (Exception e) {
 			Workbench.getInstance().error("An error occurred while converting the workspace!");
 			e.printStackTrace();
 		}
 		
-		Workbench.getInstance().info("workspace successfully imported!");
 	}
 	
 	private FileExtensions checkIfGenomeLoaded(long taxId) {

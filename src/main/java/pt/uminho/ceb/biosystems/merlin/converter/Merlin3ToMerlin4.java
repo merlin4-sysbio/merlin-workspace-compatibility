@@ -728,7 +728,6 @@ public class Merlin3ToMerlin4 {
 	public void genericDataRetrieverAndInjectionRespectingOrder(String oldTable, String newTable, List<Integer> positions, int error) throws InterruptedException {
 
 		try {
-			Map<Integer, List<Integer>> alreadyUploaded = new HashMap<>();
 
 			Statement oldStatement = oldConnection.createStatement();
 			Statement newStatement = newConnection.createStatement();
