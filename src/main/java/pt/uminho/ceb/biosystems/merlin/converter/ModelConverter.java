@@ -458,8 +458,6 @@ public class ModelConverter {
 	public static void stoichiometry(Connection oldConnection, Connection newConnection, List<Integer> positions, int error) throws InterruptedException {
 
 		try {
-			Map<Integer, List<Integer>> alreadyUploaded = new HashMap<>();
-
 			Statement oldStatement = oldConnection.createStatement();
 			Statement newStatement = newConnection.createStatement();
 
@@ -483,6 +481,103 @@ public class ModelConverter {
 						
 						if(count == 2 && rs.getString(pos).contains("n"))
 							data = "1";
+						else if(rs.getString(pos) != null)
+							data = ModelConverter.str(rs.getString(pos), newConnection.getDatabase_type());
+
+						query +=  data ;
+
+						if(count < positions.size())
+							query += ", ";
+
+						count++;
+					}
+
+					query += ");";
+
+					//						System.out.println(query);
+
+					newStatement.execute(query);
+				} catch (JdbcSQLIntegrityConstraintViolationException e) {
+					//					System.out.println("Primary key constraint violation in table " + newTable);
+					//											e.printStackTrace();
+				}
+				catch (MySQLIntegrityConstraintViolationException e) {
+					//					System.out.println("Primary key constraint violation in table " + newTable);
+					//											e.printStackTrace();
+				}
+				catch (CommunicationsException e) {
+
+					if(error < LIMIT) {
+						
+						logger.error("Communications exception! Retrying...");
+
+						TimeUnit.MINUTES.sleep(1);
+
+						error++;
+						
+						oldConnection = new Connection(oldConnection.getDatabaseAccess());
+						newConnection = new Connection(newConnection.getDatabaseAccess());
+						
+						stoichiometry(oldConnection, newConnection, positions, error);
+					}
+					//					System.out.println("Primary key constraint violation in table " + newTable);
+					//					e.printStackTrace();
+				}
+				//				}
+			}
+
+			rs.close();
+
+			oldStatement.close();
+			newStatement.close();
+		} 
+		catch (SQLException e) {
+
+			Workbench.getInstance().error(e);
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * @param oldTable
+	 * @param newTable
+	 * @throws InterruptedException 
+	 */
+	public static void pathway(Connection oldConnection, Connection newConnection, List<Integer> positions, int error) throws InterruptedException {
+
+		try {
+			Statement oldStatement = oldConnection.createStatement();
+			Statement newStatement = newConnection.createStatement();
+
+			String newTable = "model_pathway";
+			String oldTable = "pathway";
+			
+			newStatement.execute("DELETE FROM " + newTable + ";");
+
+			ResultSet rs = oldStatement.executeQuery("SELECT * FROM " + oldTable + ";");
+			
+			ResultSetMetaData rsmd = rs.getMetaData();
+
+			int columns = rsmd.getColumnCount();
+
+			boolean skip = false;
+			
+			if(columns == 4)
+				skip = true;
+
+			while(rs.next()) {
+
+				try {
+					String query = "INSERT INTO " + newTable + " VALUES (";
+
+					int count = 1;
+
+					for(int pos : positions) {
+
+						String data = null;
+						
+						if(pos == 5 && skip)
+							data = null;
 						else if(rs.getString(pos) != null)
 							data = ModelConverter.str(rs.getString(pos), newConnection.getDatabase_type());
 

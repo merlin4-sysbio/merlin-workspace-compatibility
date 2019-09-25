@@ -251,7 +251,7 @@ public class Merlin3ToMerlin4 {
 					positions.add(3);
 					positions.add(4);
 
-					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
+					ModelConverter.pathway(oldConnection, newConnection, positions, error);
 				}
 				else if(newTable.equalsIgnoreCase("model_pathway_has_reaction")) {
 					positions.add(2);
