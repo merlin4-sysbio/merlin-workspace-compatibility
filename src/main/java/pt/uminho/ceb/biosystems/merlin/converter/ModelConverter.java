@@ -210,7 +210,7 @@ public class ModelConverter {
 					if(rs.getString(15) != null)
 						upperBound = str(rs.getString(15), type);
 
-					if(compartment == 1)
+					if(compartment == 1 || compartment == 2) //check if any of the compounds of the reaction is 'in' or 'out'! If it is, it means that this should be null
 						compartment = null;
 
 					newStatement.execute("INSERT INTO model_reaction (idreaction, boolean_rule, " + inModelColumnName + ", " + lowerBoundColumnName + ", notes, " + upperBoundColumnName + 
