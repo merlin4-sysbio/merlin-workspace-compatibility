@@ -5,6 +5,7 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -147,6 +148,8 @@ public class ModelConverter {
 			while(rs.next()) {
 
 				try {
+					Integer idReaction = rs.getInt(1);
+					
 					ResultSet rs2 = newStatement.executeQuery("SELECT idreaction_label FROM model_reaction_labels WHERE name = " + str(rs.getString(2), type) + ";");
 
 					Integer labelId = null;
@@ -209,14 +212,45 @@ public class ModelConverter {
 
 					if(rs.getString(15) != null)
 						upperBound = str(rs.getString(15), type);
+					
+					Integer inside = null;
+					Integer outside = null;
+					
+					ResultSet rs3 = oldStatement2.executeQuery("SELECT idcompartment FROM compartment WHERE name = 'inside';");
+					
+					if(rs3.next())
+						inside = rs3.getInt(1);
+					
+					rs3 = oldStatement2.executeQuery("SELECT idcompartment FROM compartment WHERE name = 'outside';");
+					
+					if(rs3.next())
+						outside = rs3.getInt(1);
 
-					if(compartment == 1 || compartment == 2) //check if any of the compounds of the reaction is 'in' or 'out'! If it is, it means that this should be null
+					if(inside != null && outside != null && (compartment == inside || compartment == outside))
 						compartment = null;
+					
+					if(compartment != null && inside != null) {
+						
+						rs3 = oldStatement2.executeQuery("SELECT compartment_idcompartment FROM stoichiometry WHERE reaction_idreaction = " + idReaction + ";");  //check if any of the compounds of the reaction is 'in' or 'out'! If it is, it means that this should be null
+						
+						List<Integer> stoiComps = new ArrayList<>();
+						
+						while(rs3.next())
+							stoiComps.add(rs3.getInt(1));
+						
+						if(stoiComps.contains(inside))
+							compartment = null;
+						else if(outside != null && stoiComps.contains(outside))
+							compartment = null;
+					}
 
 					newStatement.execute("INSERT INTO model_reaction (idreaction, boolean_rule, " + inModelColumnName + ", " + lowerBoundColumnName + ", notes, " + upperBoundColumnName + 
 							", compartment_idcompartment, model_reaction_labels_idreaction_label) VALUES ("
-							+ rs.getInt(1) + ", " + str(rs.getString(5), type) + ", " + rs.getInt(6) + ", " + lowerBound + ", " + str(rs.getString(13), type) + ", "
+							+ idReaction + ", " + str(rs.getString(5), type) + ", " + rs.getInt(6) + ", " + lowerBound + ", " + str(rs.getString(13), type) + ", "
 							+ upperBound + ", " + compartment + ", " + labelId + ");");
+					
+					rs3.close();
+					
 				} 
 				catch (JdbcSQLIntegrityConstraintViolationException e) {
 					//					System.out.println("Primary key constraint violation in table " + newTable);
