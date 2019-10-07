@@ -98,11 +98,6 @@
 			<artifactId>merlin-aibench</artifactId>
 			<version>4.0.1-SNAPSHOT</version>
 		</dependency>
-		<dependency>
-			<groupId>pt.uminho.ceb.biosystems.merlin</groupId>
-			<artifactId>merlin-databaseConnector</artifactId>
-			<version>4.0.2-SNAPSHOT</version>
-		</dependency>
 	</dependencies>
 	
 	
