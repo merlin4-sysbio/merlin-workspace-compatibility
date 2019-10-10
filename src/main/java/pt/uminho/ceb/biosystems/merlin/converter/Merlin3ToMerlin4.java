@@ -164,7 +164,7 @@ public class Merlin3ToMerlin4 {
 				positions.add(3);
 				positions.add(2);
 
-				genericDataRetrieverAndInjectionRespectingOrder("compartment", newTable, positions, error);
+				genericDataRetrieverAndInjectionRespectingOrder("compartments", newTable, positions, error);
 			}
 			else
 				genericDataRetrieverAndInjection(newTable.replace("compartments_annotation_", ""), newTable, error);
