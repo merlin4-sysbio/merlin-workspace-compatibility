@@ -48,15 +48,17 @@ public class ConverterGUI implements PropertyChangeListener {
 	private TimeLeftProgress progress = new TimeLeftProgress();
 	private AtomicBoolean cancel = new AtomicBoolean(false);
 	private static String today = setToday();
+	private boolean override = false;
 
-	@Port(direction=Direction.INPUT, name="new workspace name", description="write the new workspace's name", validateMethod = "checkIfValidName", order=1)
+	@Port(direction=Direction.INPUT, name="new workspace name", description="write the new workspace's name", validateMethod = "checkIfValidName", order=2)
 	public void setNewWorkspaceName(String newWorkspaceName) {
 
 		try {
 			List<String> names = InitDataAccess.getInstance().getDatabasesAvailable();
 
-			if(names.contains(newWorkspaceName))
-				throw new Exception("workspace name already in use, please select a different name!");
+			if(names.contains(newWorkspaceName) && !override)
+				throw new Exception("workspace name already in use, please select a different name! "
+						+ "If you wish to override an existing database, please select 'force database creation' at this operations' menu.");
 			else
 				this.newWorkspaceName = newWorkspaceName;
 
@@ -68,14 +70,14 @@ public class ConverterGUI implements PropertyChangeListener {
 
 	}
 
-	@Port(direction=Direction.INPUT, name="old workspace name", description="write the new workspace's name", validateMethod = "checkIfValidName", order=2)
+	@Port(direction=Direction.INPUT, name="old workspace name", description="write the new workspace's name", validateMethod = "checkIfValidName", order=3)
 	public void setOldWorkspaceName(String oldWorkspaceName) {
 
 		this.oldWorkspaceName = oldWorkspaceName;
 
 	}
 
-	@Port(direction=Direction.INPUT, name="merlin 3 home directory", description="select the home directory of merlin 3", order=3)
+	@Port(direction=Direction.INPUT, name="merlin 3 home directory", description="select the home directory of merlin 3", order=4)
 	public void setNewProject(File merlinDirectory) {
 		
 		try {
@@ -134,6 +136,14 @@ public class ConverterGUI implements PropertyChangeListener {
 			e.printStackTrace();
 		}
 		
+	}
+	
+	@Port(direction=Direction.INPUT, name="force database creation", description="this command forces merlin to create a database with the seleted name. If a database with such name already exists, it will be replaced",
+			advanced = true, defaultValue = "false", order=1)
+	public void setOldWorkspaceName(boolean override) {
+
+		this.override = override;
+
 	}
 	
 	private FileExtensions checkIfGenomeLoaded(long taxId) {
