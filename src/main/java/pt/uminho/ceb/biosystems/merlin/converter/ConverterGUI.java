@@ -15,7 +15,9 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import es.uvigo.ei.aibench.core.operation.annotation.Cancel;
 import es.uvigo.ei.aibench.core.operation.annotation.Direction;
@@ -23,6 +25,7 @@ import es.uvigo.ei.aibench.core.operation.annotation.Operation;
 import es.uvigo.ei.aibench.core.operation.annotation.Port;
 import es.uvigo.ei.aibench.core.operation.annotation.Progress;
 import es.uvigo.ei.aibench.workbench.Workbench;
+import pt.uminho.ceb.biosystems.merlin.aibench.gui.CustomGUI;
 import pt.uminho.ceb.biosystems.merlin.aibench.utilities.TimeLeftProgress;
 import pt.uminho.ceb.biosystems.merlin.bioapis.externalAPI.utilities.Enumerators.FileExtensions;
 import pt.uminho.ceb.biosystems.merlin.dataAccess.InitDataAccess;
@@ -46,9 +49,11 @@ public class ConverterGUI implements PropertyChangeListener {
 	private long startTime;
 	private String message;
 	private TimeLeftProgress progress = new TimeLeftProgress();
-	private AtomicBoolean cancel = new AtomicBoolean(false);
 	private static String today = setToday();
 	private boolean override = false;
+	private Merlin3ToMerlin4 converter;
+	
+	private static final Logger logger = LoggerFactory.getLogger(ConverterGUI.class);
 
 	@Port(direction=Direction.INPUT, name="new workspace name", description="write the new workspace's name", validateMethod = "checkIfValidName", order=2)
 	public void setNewWorkspaceName(String newWorkspaceName) {
@@ -96,11 +101,11 @@ public class ConverterGUI implements PropertyChangeListener {
 			Connection newConnection = new Connection(newDBAccess);
 			Connection oldConnection = new Connection(oldDBAccess);
 
-			Merlin3ToMerlin4 converter = new Merlin3ToMerlin4(oldConnection, newConnection);
+			this.converter = new Merlin3ToMerlin4(oldConnection, newConnection);
 
-			converter.addPropertyChangeListener(this);
+			this.converter.addPropertyChangeListener(this);
 
-			converter.start();
+			this.converter.start();
 
 			oldConnection.closeConnection();
 			newConnection.closeConnection();
@@ -314,14 +319,24 @@ public class ConverterGUI implements PropertyChangeListener {
 	}
 
 	/**
-	 * @param cancel the cancel to set
+	 * 
 	 */
 	@Cancel
-	public void setCancel() {
+	public void cancel() {
 
-		progress.setTime(0, 0, 0);
-		Workbench.getInstance().warn("operation canceled!");
-		this.cancel.set(true);
+		String[] options = new String[2];
+		options[0]="yes";
+		options[1]="no";
+
+		int result=CustomGUI.stopQuestion("cancel confirmation", "are you sure you want to cancel the operation?", options);
+
+		if(result==0) {
+			
+			progress.setTime((GregorianCalendar.getInstance().getTimeInMillis()-GregorianCalendar.getInstance().getTimeInMillis()),1,1);
+			InitDataAccess.getInstance().getDatabaseExporterBatchService(this.newWorkspaceName).setCancel(true);
+			logger.warn("export workspace operation canceled!");
+			Workbench.getInstance().warn("Please hold on. Your operation is being cancelled.");
+		}
 	}
 
 	@Override

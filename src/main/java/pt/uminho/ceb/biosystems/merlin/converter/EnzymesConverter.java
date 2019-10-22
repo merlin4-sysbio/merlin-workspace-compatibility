@@ -134,6 +134,83 @@ public class EnzymesConverter {
 			e.printStackTrace();
 		}
 	}
+	
+	/**
+	 * @param oldTable
+	 * @param newTable
+	 * @throws InterruptedException 
+	 */
+	public static void homologySetup(Connection oldConnection, Connection newConnection, int error) throws InterruptedException {
+
+		try {
+			Statement oldStatement = oldConnection.createStatement();
+			Statement newStatement = newConnection.createStatement();
+
+			DatabaseType type = newConnection.getDatabase_type();
+
+			ResultSet rs = oldStatement.executeQuery("SELECT * FROM homologySetup;");
+
+			String newTable = "enzymes_annotation_homologySetup";
+
+			if(type.equals(DatabaseType.H2))
+				newTable = "enzymes_annotation_homologysetup";
+
+			newStatement.execute("DELETE FROM " + newTable + ";");
+
+			while(rs.next()) {
+
+				try {
+
+					if(type.equals(DatabaseType.H2))
+						newStatement.execute("INSERT INTO " + newTable + " (s_key, program, program_version, databaseid, evalue, matrix, wordsize, gapcosts, maxnumberofalignments) VALUES ("
+								+ rs.getInt("s_key") + ", " + str(rs.getString("program"), type) + ", " + str(rs.getString("version"), type) + ", " + str(rs.getString("databaseid"), type) 
+								+ ", " +  str(rs.getString("evalue"), type) + ", " +  str(rs.getString("matrix"), type) + ", " +  str(rs.getString("wordsize"), type) + ", " +  str(rs.getString("gapcosts"), type)
+								+ ", " +  str(rs.getString("maxnumberofalignments"), type) + ");");
+							
+					else
+						newStatement.execute("INSERT INTO " + newTable + " (s_key, program, program_version, databaseID, eValue, matrix, wordSize, gapCosts, maxNumberOfAlignments) VALUES ("
+								+ rs.getInt("s_key") + ", " + str(rs.getString("program"), type) + ", " + str(rs.getString("version"), type) + ", " + str(rs.getString("databaseID"), type) 
+								+ ", " +  str(rs.getString("eValue"), type) + ", " +  str(rs.getString("matrix"), type) + ", " +  str(rs.getString("wordSize"), type) + ", " +  str(rs.getString("gapCosts"), type)
+								+ ", " +  str(rs.getString("maxNumberOfAlignments"), type) + ");");
+					
+				} catch (JdbcSQLIntegrityConstraintViolationException e) {
+					//					System.out.println("Primary key constraint violation in table " + newTable);
+					//					e.printStackTrace();
+				}
+				catch (MySQLIntegrityConstraintViolationException e) {
+					//	Workbench.getInstance().error(e);
+					e.printStackTrace();
+				}
+				catch (CommunicationsException e) {
+
+					if(error < LIMIT) {
+						
+						logger.error("Communications exception! Retrying...");
+
+						TimeUnit.MINUTES.sleep(1);
+
+						error++;
+						
+						oldConnection = new Connection(oldConnection.getDatabaseAccess());
+						newConnection = new Connection(newConnection.getDatabaseAccess());
+						
+						geneHomology(oldConnection, newConnection, error);
+					}
+					//					System.out.println("Primary key constraint violation in table " + newTable);
+					//					e.printStackTrace();
+				}
+			}
+
+			rs.close();
+
+			oldStatement.close();
+			newStatement.close();
+		} 
+		catch (SQLException e) {
+			Workbench.getInstance().error(e);
+			e.printStackTrace();
+		}
+	}
 
 	private static String str(String word, DatabaseType type) {
 

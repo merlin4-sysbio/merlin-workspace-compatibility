@@ -11,6 +11,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.h2.jdbc.JdbcSQLIntegrityConstraintViolationException;
 import org.slf4j.Logger;
@@ -35,8 +36,8 @@ public class Merlin3ToMerlin4 {
 	private List<String> interproTables;
 	private List<String> modelTables;
 	private Integer counter = 0;
-	
-	
+	private AtomicBoolean cancel;
+
 	private PropertyChangeSupport changes;
 
 	private static final Logger logger = LoggerFactory.getLogger(Merlin3ToMerlin4.class);
@@ -46,8 +47,9 @@ public class Merlin3ToMerlin4 {
 
 		this.oldConnection = oldConnection;
 		this.newConnection = newConnection;
-		
+
 		this.changes = new PropertyChangeSupport(this);
+		this.setCancel(false);
 
 	}
 
@@ -57,19 +59,15 @@ public class Merlin3ToMerlin4 {
 			logger.info("reading tables names...");
 
 			readTablesNames();
-			
+
 			int total = this.enzymesTables.size() + this.compartmentsTables.size() + this.modelTables.size() + this.interproTables.size() + 1;
-			
+
 			this.changes.firePropertyChange("size", null, total);
 			this.changes.firePropertyChange("message", null, "importing and converting data, this process may take a while");
 
 			logger.info("importing projects table...");
 
 			convertProjects();
-
-			logger.info("importing compartments tables...");
-
-			convertCompartments();
 
 			logger.info("importing interpro tables...");
 
@@ -78,6 +76,10 @@ public class Merlin3ToMerlin4 {
 			logger.info("importing model tables...");
 
 			convertModel();
+
+			logger.info("importing compartments tables...");
+
+			convertCompartments();
 
 			logger.info("importing enzymes tables...");
 
@@ -116,21 +118,8 @@ public class Merlin3ToMerlin4 {
 	 */
 	public void convertProjects() throws InterruptedException {
 
-		List<Integer> positions = new ArrayList<Integer>();
-		List<Integer> bits = new ArrayList<Integer>();
+		Projects.projects(oldConnection, newConnection, 0);
 
-		positions.add(1);
-		positions.add(8);
-		positions.add(4);
-		positions.add(3);
-		positions.add(2);
-		positions.add(7);
-		positions.add(6);
-		positions.add(5);
-
-		bits.add(3);
-		genericDataRetrieverAndInjectionRespectingOrderAndBitsType("projects", "projects", positions, bits, 0);
-		
 		counter++;
 		this.changes.firePropertyChange("tablesCounter", null, counter);
 	}
@@ -142,35 +131,38 @@ public class Merlin3ToMerlin4 {
 	public void convertCompartments() throws InterruptedException {
 
 		for(String newTable : this.compartmentsTables) {
-			
-			int error = 0;
 
-			logger.info("Table: " + newTable);
+			if(!this.cancel.get()) {
 
-			List<Integer> positions = new ArrayList<Integer>();
+				int error = 0;
 
-			if(newTable.equalsIgnoreCase("compartments_annotation_reports"))
-				CompartmentsConverter.psort_reports(this.oldConnection, this.newConnection);
+				logger.info("Table: " + newTable);
 
-			else if(newTable.equalsIgnoreCase("compartments_annotation_reports_has_compartments")){
-				positions.add(2);
-				positions.add(1);
-				positions.add(3);
+				List<Integer> positions = new ArrayList<Integer>();
 
-				genericDataRetrieverAndInjectionRespectingOrder("psort_reports_has_compartments", newTable, positions, error);
+				//			if(newTable.equalsIgnoreCase("compartments_annotation_reports"))
+				//				CompartmentsConverter.psort_reports(this.oldConnection, this.newConnection);
+
+				if(newTable.equalsIgnoreCase("compartments_annotation_reports_has_compartments")){
+					positions.add(2);
+					positions.add(1);
+					positions.add(3);
+
+					genericDataRetrieverAndInjectionRespectingOrder("psort_reports_has_compartments", newTable, positions, error);
+				}
+				else if(newTable.equalsIgnoreCase("compartments_annotation_compartments")){
+					positions.add(1);
+					positions.add(3);
+					positions.add(2);
+
+					genericDataRetrieverAndInjectionRespectingOrder("compartments", newTable, positions, error);
+				}
+				else
+					genericDataRetrieverAndInjection(newTable.replace("compartments_annotation_", ""), newTable, error);
+
+				counter++;
+				this.changes.firePropertyChange("tablesCounter", null, counter);
 			}
-			else if(newTable.equalsIgnoreCase("compartments_annotation_compartments")){
-				positions.add(1);
-				positions.add(3);
-				positions.add(2);
-
-				genericDataRetrieverAndInjectionRespectingOrder("compartments", newTable, positions, error);
-			}
-			else
-				genericDataRetrieverAndInjection(newTable.replace("compartments_annotation_", ""), newTable, error);
-			
-			counter++;
-			this.changes.firePropertyChange("tablesCounter", null, counter);
 
 		}
 	}
@@ -181,209 +173,213 @@ public class Merlin3ToMerlin4 {
 	 */
 	public void convertModel() throws InterruptedException {
 
+
+
 		for(String newTable : this.modelTables) {
 
-			List<Integer> positions = new ArrayList<Integer>();
-			List<Integer> bits = new ArrayList<Integer>();
+			if(!this.cancel.get()) {
 
-			logger.info("Table: " + newTable);
-			
-			int error = 0;
+				List<Integer> positions = new ArrayList<Integer>();
+				List<Integer> bits = new ArrayList<Integer>();
 
-			if(newTable.startsWith("model_")) {
+				logger.info("Table: " + newTable);
 
-				String oldTable = newTable.replace("model_", "");
+				int error = 0;
 
-				if(newTable.equalsIgnoreCase("model_gene")) {
-					positions.add(1);
-					positions.add(7);
-					positions.add(5);
-					positions.add(3);
-					positions.add(2);
-					positions.add(8);
-					positions.add(9);
-					positions.add(6);
-					positions.add(4);
+				if(newTable.startsWith("model_")) {
 
-					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
+					String oldTable = newTable.replace("model_", "");
+
+					if(newTable.equalsIgnoreCase("model_gene")) {
+						positions.add(1);
+						positions.add(7);
+						positions.add(5);
+						positions.add(3);
+						positions.add(2);
+						positions.add(8);
+						positions.add(9);
+						positions.add(6);
+						positions.add(4);
+
+						genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
+					}
+					else if(newTable.equalsIgnoreCase("model_sequence")) {
+						positions.add(1);
+						positions.add(4);
+						positions.add(5);
+						positions.add(3);
+						positions.add(2);
+
+						ModelConverter.sequence(oldConnection, newConnection, error);
+					}
+					else if(newTable.equalsIgnoreCase("model_enzymatic_cofactor")) {
+						positions.add(1);
+						positions.add(2);
+						positions.add(3);
+
+						bits.add(3);
+
+						genericDataRetrieverAndInjectionRespectingOrderAndBitsType(oldTable, newTable, positions, bits, error);
+					}
+					else if(newTable.equalsIgnoreCase("model_feature")) {
+						positions.add(1);
+						positions.add(2);
+						positions.add(3);
+						positions.add(5);
+						positions.add(4);
+
+						genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
+					}
+					else if(newTable.equalsIgnoreCase("model_sequence_feature")) {
+						positions.add(1);
+						positions.add(2);
+						positions.add(4);
+						positions.add(3);
+
+						genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
+					}
+					else if(newTable.equalsIgnoreCase("model_pathway")) {
+						positions.add(1);
+						positions.add(2);
+						positions.add(5);
+						positions.add(3);
+						positions.add(4);
+
+						ModelConverter.pathway(oldConnection, newConnection, positions, error);
+
+					}
+					else if(newTable.equalsIgnoreCase("model_pathway_has_reaction")) {
+						positions.add(2);
+						positions.add(1);
+
+						genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
+					}
+					else if(newTable.equalsIgnoreCase("model_compartment")) {
+						positions.add(1);
+						positions.add(3);
+						positions.add(2);
+
+						genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
+					}
+					else if(newTable.equalsIgnoreCase("model_compartment")) {
+						positions.add(1);
+						positions.add(3);
+						positions.add(2);
+
+						genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
+					}
+					else if(newTable.equalsIgnoreCase("model_gene_has_compartment")) {
+						positions.add(2);
+						positions.add(1);
+						positions.add(3);
+						positions.add(4);
+
+						bits.add(3);
+
+						genericDataRetrieverAndInjectionRespectingOrderAndBitsType(oldTable, newTable, positions, bits, error);
+					}
+					else if(newTable.equalsIgnoreCase("model_module")) {
+						positions.add(1);
+						positions.add(6);
+						positions.add(3);
+						positions.add(7);
+						positions.add(5);
+						positions.add(2);
+						positions.add(4);
+						positions.add(8);
+
+						genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
+					}
+					else if(newTable.equalsIgnoreCase("model_pathway_has_compound")) {
+						positions.add(2);
+						positions.add(1);
+
+						genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
+					}
+					else if(newTable.equalsIgnoreCase("model_modules_has_compound")) {
+						positions.add(2);
+						positions.add(1);
+
+						genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
+					}
+					else if(newTable.equalsIgnoreCase("model_aliases")) {
+						positions.add(1);
+						positions.add(4);
+						positions.add(2);
+						positions.add(3);
+
+						genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
+					}
+					else if(newTable.equalsIgnoreCase("model_dictionary")) {
+						positions.add(2);
+						positions.add(1);
+						positions.add(3);
+
+						genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
+					}
+					else if(newTable.equalsIgnoreCase("model_compound")) {
+						positions.add(1);
+						positions.add(9);
+						positions.add(5);
+						positions.add(4);
+						positions.add(6);
+						positions.add(11);
+						positions.add(3);
+						positions.add(7);
+						positions.add(2);
+						positions.add(8);
+						positions.add(10);
+
+						bits.add(11);
+						genericDataRetrieverAndInjectionRespectingOrderAndBitsType(oldTable, newTable, positions, bits, error);
+					}
+					else if(newTable.equalsIgnoreCase("model_dblinks")) {
+						positions.add(1);
+						positions.add(3);
+						positions.add(2);
+						positions.add(4);
+
+
+						genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
+					}
+					else if(newTable.equalsIgnoreCase("model_stoichiometry")) {
+						positions.add(1);
+						positions.add(5);
+						positions.add(4);
+						positions.add(3);
+						positions.add(2);
+
+						ModelConverter.stoichiometry(this.oldConnection, this.newConnection, positions, error);
+					}
+					else if(newTable.equalsIgnoreCase("model_reaction_has_model_protein")) {
+						//					positions.add(2);
+						positions.add(3);
+						positions.add(1);
+
+						genericDataRetrieverAndInjectionRespectingOrder("reaction_has_enzyme", newTable, positions, error);
+					}
+					else if(newTable.equalsIgnoreCase("model_protein")) {
+						ModelConverter.protein(this.oldConnection, this.newConnection, error);
+					}
+					else if(newTable.equalsIgnoreCase("model_pathway_has_model_protein")) {
+						//					positions.add(2);
+						positions.add(3);
+						positions.add(1);
+
+						genericDataRetrieverAndInjectionRespectingOrder("pathway_has_enzyme", newTable, positions, error);
+					}
+					else if(newTable.equalsIgnoreCase("model_subunit")) {
+						ModelConverter.subunit(this.oldConnection, this.newConnection, error);
+					}
+					else if(newTable.equalsIgnoreCase("model_reaction")) {
+						ModelConverter.reaction(this.oldConnection, this.newConnection, error);
+					}
+					else if(!newTable.equalsIgnoreCase("model_reaction_labels") && !newTable.equalsIgnoreCase("model_subunit_has_model_module"))
+						genericDataRetrieverAndInjection(oldTable, newTable, error);
+
+					counter++;
+					this.changes.firePropertyChange("tablesCounter", null, counter);
 				}
-				else if(newTable.equalsIgnoreCase("model_sequence")) {
-					positions.add(1);
-					positions.add(4);
-					positions.add(5);
-					positions.add(3);
-					positions.add(2);
-
-					ModelConverter.sequence(oldConnection, newConnection, error);
-				}
-				else if(newTable.equalsIgnoreCase("model_enzymatic_cofactor")) {
-					positions.add(1);
-					positions.add(2);
-					positions.add(3);
-
-					bits.add(3);
-
-					genericDataRetrieverAndInjectionRespectingOrderAndBitsType(oldTable, newTable, positions, bits, error);
-				}
-				else if(newTable.equalsIgnoreCase("model_feature")) {
-					positions.add(1);
-					positions.add(2);
-					positions.add(3);
-					positions.add(5);
-					positions.add(4);
-
-					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
-				}
-				else if(newTable.equalsIgnoreCase("model_sequence_feature")) {
-					positions.add(1);
-					positions.add(2);
-					positions.add(4);
-					positions.add(3);
-
-					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
-				}
-				else if(newTable.equalsIgnoreCase("model_pathway")) {
-					positions.add(1);
-					positions.add(2);
-					positions.add(5);
-					positions.add(3);
-					positions.add(4);
-
-					ModelConverter.pathway(oldConnection, newConnection, positions, error);
-					
-				}
-				else if(newTable.equalsIgnoreCase("model_pathway_has_reaction")) {
-					positions.add(2);
-					positions.add(1);
-
-					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
-				}
-				else if(newTable.equalsIgnoreCase("model_compartment")) {
-					positions.add(1);
-					positions.add(3);
-					positions.add(2);
-
-					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
-				}
-				else if(newTable.equalsIgnoreCase("model_compartment")) {
-					positions.add(1);
-					positions.add(3);
-					positions.add(2);
-
-					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
-				}
-				else if(newTable.equalsIgnoreCase("model_gene_has_compartment")) {
-					positions.add(2);
-					positions.add(1);
-					positions.add(3);
-					positions.add(4);
-
-					bits.add(3);
-
-					genericDataRetrieverAndInjectionRespectingOrderAndBitsType(oldTable, newTable, positions, bits, error);
-				}
-				else if(newTable.equalsIgnoreCase("model_module")) {
-					positions.add(1);
-					positions.add(6);
-					positions.add(3);
-					positions.add(7);
-					positions.add(5);
-					positions.add(2);
-					positions.add(4);
-					positions.add(8);
-
-					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
-				}
-				else if(newTable.equalsIgnoreCase("model_pathway_has_compound")) {
-					positions.add(2);
-					positions.add(1);
-
-					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
-				}
-				else if(newTable.equalsIgnoreCase("model_modules_has_compound")) {
-					positions.add(2);
-					positions.add(1);
-
-					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
-				}
-				else if(newTable.equalsIgnoreCase("model_aliases")) {
-					positions.add(1);
-					positions.add(4);
-					positions.add(2);
-					positions.add(3);
-
-					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
-				}
-				else if(newTable.equalsIgnoreCase("model_dictionary")) {
-					positions.add(2);
-					positions.add(1);
-					positions.add(3);
-
-					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
-				}
-				else if(newTable.equalsIgnoreCase("model_compound")) {
-					positions.add(1);
-					positions.add(9);
-					positions.add(5);
-					positions.add(4);
-					positions.add(6);
-					positions.add(11);
-					positions.add(3);
-					positions.add(7);
-					positions.add(2);
-					positions.add(8);
-					positions.add(10);
-
-					bits.add(11);
-					genericDataRetrieverAndInjectionRespectingOrderAndBitsType(oldTable, newTable, positions, bits, error);
-				}
-				else if(newTable.equalsIgnoreCase("model_dblinks")) {
-					positions.add(1);
-					positions.add(3);
-					positions.add(2);
-					positions.add(4);
-
-
-					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
-				}
-				else if(newTable.equalsIgnoreCase("model_stoichiometry")) {
-					positions.add(1);
-					positions.add(5);
-					positions.add(4);
-					positions.add(3);
-					positions.add(2);
-
-					ModelConverter.stoichiometry(this.oldConnection, this.newConnection, positions, error);
-				}
-				else if(newTable.equalsIgnoreCase("model_reaction_has_model_protein")) {
-					//					positions.add(2);
-					positions.add(3);
-					positions.add(1);
-
-					genericDataRetrieverAndInjectionRespectingOrder("reaction_has_enzyme", newTable, positions, error);
-				}
-				else if(newTable.equalsIgnoreCase("model_protein")) {
-					ModelConverter.protein(this.oldConnection, this.newConnection, error);
-				}
-				else if(newTable.equalsIgnoreCase("model_pathway_has_model_protein")) {
-					//					positions.add(2);
-					positions.add(3);
-					positions.add(1);
-
-					genericDataRetrieverAndInjectionRespectingOrder("pathway_has_enzyme", newTable, positions, error);
-				}
-				else if(newTable.equalsIgnoreCase("model_subunit")) {
-					ModelConverter.subunit(this.oldConnection, this.newConnection, error);
-				}
-				else if(newTable.equalsIgnoreCase("model_reaction")) {
-					ModelConverter.reaction(this.oldConnection, this.newConnection, error);
-				}
-				else if(!newTable.equalsIgnoreCase("model_reaction_labels"))
-					genericDataRetrieverAndInjection(oldTable, newTable, error);
-				
-				counter++;
-				this.changes.firePropertyChange("tablesCounter", null, counter);
-
 			}
 
 		}
@@ -397,142 +393,136 @@ public class Merlin3ToMerlin4 {
 
 		for(String newTable : this.enzymesTables) {
 
-			logger.info("Table: " + newTable);
+			if(!this.cancel.get()) {
 
-			List<Integer> positions = new ArrayList<Integer>();
-			List<Integer> bits = new ArrayList<Integer>();
+				logger.info("Table: " + newTable);
 
-			String oldTable = newTable.replace("enzymes_annotation_", "");
-			
-			int error = 0;
+				List<Integer> positions = new ArrayList<Integer>();
+				List<Integer> bits = new ArrayList<Integer>();
 
-			if(newTable.equalsIgnoreCase("enzymes_annotation_organism")) {
-				positions.add(1);
-				positions.add(2);
-				positions.add(4);
-				positions.add(3);
+				String oldTable = newTable.replace("enzymes_annotation_", "");
 
-				genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
+				int error = 0;
+
+				if(newTable.equalsIgnoreCase("enzymes_annotation_organism")) {
+					positions.add(1);
+					positions.add(2);
+					positions.add(4);
+					positions.add(3);
+
+					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
+				}
+				else if(newTable.equalsIgnoreCase("enzymes_annotation_productRank_has_organism")) {
+					positions.add(2);
+					positions.add(1);
+
+					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
+				}
+				else if(newTable.equalsIgnoreCase("enzymes_annotation_ecNumberRank")) {
+					positions.add(1);
+					positions.add(3);
+					positions.add(4);
+					positions.add(2);
+
+					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
+				}
+				else if(newTable.equalsIgnoreCase("enzymes_annotation_productRank")) {
+					positions.add(1);
+					positions.add(3);
+					positions.add(4);
+					positions.add(2);
+
+					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
+				}
+				else if(newTable.equalsIgnoreCase("enzymes_annotation_homologues_has_ecNumber")) {
+					positions.add(2);
+					positions.add(1);
+
+					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
+				}
+				else if(newTable.equalsIgnoreCase("enzymes_annotation_ecNumberList")) {
+					positions.add(1);
+					positions.add(3);
+					positions.add(2);
+
+					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
+				}
+				else if(newTable.equalsIgnoreCase("enzymes_annotation_productList")) {
+					positions.add(1);
+					positions.add(3);
+					positions.add(2);
+
+					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
+				}
+				else if(newTable.equalsIgnoreCase("enzymes_annotation_scorerConfig")) {
+					positions.add(4);
+					positions.add(3);
+					positions.add(9);
+					positions.add(5);
+					positions.add(7);
+					positions.add(8);
+					positions.add(6);
+					positions.add(1);
+					positions.add(2);
+
+					bits.add(8);
+					bits.add(9);
+
+					genericDataRetrieverAndInjectionRespectingOrderAndBitsType(oldTable, newTable, positions, bits, error);
+				}
+				else if(newTable.equalsIgnoreCase("enzymes_annotation_homologyData")) {
+					positions.add(1);
+					positions.add(8);
+					positions.add(6);
+					positions.add(4);
+					positions.add(3);
+					positions.add(9);
+					positions.add(5);
+					positions.add(7);
+					positions.add(2);
+
+					bits.add(7);
+
+					genericDataRetrieverAndInjectionRespectingOrderAndBitsType(oldTable, newTable, positions, bits, error);
+				}
+				else if(newTable.equalsIgnoreCase("enzymes_annotation_homologySetup")) {
+
+					EnzymesConverter.homologySetup(this.oldConnection, this.newConnection, 0);
+					
+				}
+				else if(newTable.equalsIgnoreCase("enzymes_annotation_homologues")) {
+					positions.add(1);
+					positions.add(5);
+					positions.add(4);
+					positions.add(3);
+					positions.add(7);
+					positions.add(6);
+					positions.add(8);
+					positions.add(2);
+
+					bits.add(8);
+
+					genericDataRetrieverAndInjectionRespectingOrderAndBitsType(oldTable, newTable, positions, bits, error);
+				}
+				else if(newTable.equalsIgnoreCase("enzymes_annotation_geneHomology_has_homologues")) {
+					positions.add(1);
+					positions.add(2);
+					positions.add(6);
+					positions.add(5);
+					positions.add(4);
+					positions.add(3);
+
+					genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
+				}
+				else if(newTable.equalsIgnoreCase("enzymes_annotation_geneHomology")) {
+					EnzymesConverter.geneHomology(this.oldConnection, this.newConnection, error);
+				}
+				else
+					genericDataRetrieverAndInjection(oldTable, newTable, error);
+
+				counter++;
+				this.changes.firePropertyChange("tablesCounter", null, counter);
 			}
-			else if(newTable.equalsIgnoreCase("enzymes_annotation_productRank_has_organism")) {
-				positions.add(2);
-				positions.add(1);
-
-				genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
-			}
-			else if(newTable.equalsIgnoreCase("enzymes_annotation_ecNumberRank")) {
-				positions.add(1);
-				positions.add(3);
-				positions.add(4);
-				positions.add(2);
-
-				genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
-			}
-			else if(newTable.equalsIgnoreCase("enzymes_annotation_productRank")) {
-				positions.add(1);
-				positions.add(3);
-				positions.add(4);
-				positions.add(2);
-
-				genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
-			}
-			else if(newTable.equalsIgnoreCase("enzymes_annotation_homologues_has_ecNumber")) {
-				positions.add(2);
-				positions.add(1);
-
-				genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
-			}
-			else if(newTable.equalsIgnoreCase("enzymes_annotation_ecNumberList")) {
-				positions.add(1);
-				positions.add(3);
-				positions.add(2);
-
-				genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
-			}
-			else if(newTable.equalsIgnoreCase("enzymes_annotation_productList")) {
-				positions.add(1);
-				positions.add(3);
-				positions.add(2);
-
-				genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
-			}
-			else if(newTable.equalsIgnoreCase("enzymes_annotation_scorerConfig")) {
-				positions.add(4);
-				positions.add(3);
-				positions.add(9);
-				positions.add(5);
-				positions.add(7);
-				positions.add(8);
-				positions.add(6);
-				positions.add(1);
-				positions.add(2);
-
-				bits.add(8);
-				bits.add(9);
-
-				genericDataRetrieverAndInjectionRespectingOrderAndBitsType(oldTable, newTable, positions, bits, error);
-			}
-			else if(newTable.equalsIgnoreCase("enzymes_annotation_homologyData")) {
-				positions.add(1);
-				positions.add(8);
-				positions.add(6);
-				positions.add(4);
-				positions.add(3);
-				positions.add(9);
-				positions.add(5);
-				positions.add(7);
-				positions.add(2);
-
-				bits.add(7);
-
-				genericDataRetrieverAndInjectionRespectingOrderAndBitsType(oldTable, newTable, positions, bits, error);
-			}
-			else if(newTable.equalsIgnoreCase("enzymes_annotation_homologySetup")) {
-				positions.add(1);
-				positions.add(4);
-				positions.add(5);
-				positions.add(8);
-				positions.add(6);
-				positions.add(9);
-				positions.add(2);
-				positions.add(3);
-				positions.add(7);
-
-				genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
-			}
-			else if(newTable.equalsIgnoreCase("enzymes_annotation_homologues")) {
-				positions.add(1);
-				positions.add(5);
-				positions.add(4);
-				positions.add(3);
-				positions.add(7);
-				positions.add(6);
-				positions.add(8);
-				positions.add(2);
-
-				bits.add(8);
-
-				genericDataRetrieverAndInjectionRespectingOrderAndBitsType(oldTable, newTable, positions, bits, error);
-			}
-			else if(newTable.equalsIgnoreCase("enzymes_annotation_geneHomology_has_homologues")) {
-				positions.add(1);
-				positions.add(2);
-				positions.add(6);
-				positions.add(5);
-				positions.add(4);
-				positions.add(3);
-
-				genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
-			}
-			else if(newTable.equalsIgnoreCase("enzymes_annotation_geneHomology")) {
-				EnzymesConverter.geneHomology(this.oldConnection, this.newConnection, error);
-			}
-			else
-				genericDataRetrieverAndInjection(oldTable, newTable, error);
-			
-			counter++;
-			this.changes.firePropertyChange("tablesCounter", null, counter);
-
 		}
 
 	}
@@ -544,83 +534,85 @@ public class Merlin3ToMerlin4 {
 	public void convertInterpro() throws InterruptedException {
 
 		for(String newTable : this.interproTables) {
-			
-			int error = 0;
 
-			logger.info("Table: " + newTable);
+			if(!this.cancel.get()) {
 
-			List<Integer> positions = new ArrayList<Integer>();
+				int error = 0;
 
-			if(newTable.equalsIgnoreCase("interpro_result_has_entry")){
-				positions.add(2);
-				positions.add(1);
+				logger.info("Table: " + newTable);
 
-				genericDataRetrieverAndInjectionRespectingOrder(newTable, newTable, positions, error);
+				List<Integer> positions = new ArrayList<Integer>();
+
+				if(newTable.equalsIgnoreCase("interpro_result_has_entry")){
+					positions.add(2);
+					positions.add(1);
+
+					genericDataRetrieverAndInjectionRespectingOrder(newTable, newTable, positions, error);
+				}
+				else if(newTable.equalsIgnoreCase("interpro_result_has_model")){
+					positions.add(2);
+					positions.add(1);
+
+					genericDataRetrieverAndInjectionRespectingOrder(newTable, newTable, positions, error);
+				}
+				else if(newTable.equalsIgnoreCase("interpro_xRef")){
+					positions.add(1);
+					positions.add(2);
+					positions.add(3);
+					positions.add(5);
+					positions.add(4);
+					positions.add(6);
+
+					genericDataRetrieverAndInjectionRespectingOrder(newTable, newTable, positions, error);
+				}
+				else if(newTable.equalsIgnoreCase("interpro_location")){
+					positions.add(1);
+					positions.add(3);
+					positions.add(9);
+					positions.add(8);
+					positions.add(7);
+					positions.add(6);
+					positions.add(10);
+					positions.add(5);
+					positions.add(4);
+					positions.add(2);
+					positions.add(11);
+
+					genericDataRetrieverAndInjectionRespectingOrder(newTable, newTable, positions, error);
+				}
+				else if(newTable.equalsIgnoreCase("interpro_results")){
+					positions.add(1);
+					positions.add(4);
+					positions.add(5);
+					positions.add(6);
+					positions.add(2);
+					positions.add(3);
+					positions.add(7);
+
+					genericDataRetrieverAndInjectionRespectingOrder(newTable, newTable, positions, error);
+				}
+				else if(newTable.equalsIgnoreCase("interpro_result")){
+					positions.add(1);
+					positions.add(6);
+					positions.add(11);
+					positions.add(8);
+					positions.add(3);
+					positions.add(5);
+					positions.add(9);
+					positions.add(10);
+					positions.add(7);
+					positions.add(4);
+					positions.add(2);
+					positions.add(12);
+
+					genericDataRetrieverAndInjectionRespectingOrder(newTable, newTable, positions, error);
+				}
+				else
+					genericDataRetrieverAndInjection(newTable, newTable, error);
+
+				counter++;
+				this.changes.firePropertyChange("tablesCounter", null, counter);
 			}
-			else if(newTable.equalsIgnoreCase("interpro_result_has_model")){
-				positions.add(2);
-				positions.add(1);
-
-				genericDataRetrieverAndInjectionRespectingOrder(newTable, newTable, positions, error);
-			}
-			else if(newTable.equalsIgnoreCase("interpro_xRef")){
-				positions.add(1);
-				positions.add(2);
-				positions.add(3);
-				positions.add(5);
-				positions.add(4);
-				positions.add(6);
-
-				genericDataRetrieverAndInjectionRespectingOrder(newTable, newTable, positions, error);
-			}
-			else if(newTable.equalsIgnoreCase("interpro_location")){
-				positions.add(1);
-				positions.add(3);
-				positions.add(9);
-				positions.add(8);
-				positions.add(7);
-				positions.add(6);
-				positions.add(10);
-				positions.add(5);
-				positions.add(4);
-				positions.add(2);
-				positions.add(11);
-
-				genericDataRetrieverAndInjectionRespectingOrder(newTable, newTable, positions, error);
-			}
-			else if(newTable.equalsIgnoreCase("interpro_results")){
-				positions.add(1);
-				positions.add(4);
-				positions.add(5);
-				positions.add(6);
-				positions.add(2);
-				positions.add(3);
-				positions.add(7);
-
-				genericDataRetrieverAndInjectionRespectingOrder(newTable, newTable, positions, error);
-			}
-			else if(newTable.equalsIgnoreCase("interpro_result")){
-				positions.add(1);
-				positions.add(6);
-				positions.add(11);
-				positions.add(8);
-				positions.add(3);
-				positions.add(5);
-				positions.add(9);
-				positions.add(10);
-				positions.add(7);
-				positions.add(4);
-				positions.add(2);
-				positions.add(12);
-
-				genericDataRetrieverAndInjectionRespectingOrder(newTable, newTable, positions, error);
-			}
-			else
-				genericDataRetrieverAndInjection(newTable, newTable, error);
-			
-			counter++;
-			this.changes.firePropertyChange("tablesCounter", null, counter);
-
 		}
 	}
 
@@ -685,16 +677,16 @@ public class Merlin3ToMerlin4 {
 				catch (CommunicationsException e) {
 
 					if(error < LIMIT) {
-						
+
 						logger.error("Communications exception! Retrying...");
 
 						TimeUnit.MINUTES.sleep(1);
 
 						error++;
-						
+
 						this.oldConnection = new Connection(this.oldConnection.getDatabaseAccess());
 						this.newConnection = new Connection(this.newConnection.getDatabaseAccess());
-								
+
 						genericDataRetrieverAndInjection(oldTable, newTable, error);
 					}
 					//					System.out.println("Primary key constraint violation in table " + newTable);
@@ -760,7 +752,10 @@ public class Merlin3ToMerlin4 {
 						count++;
 					}
 
-					query += ");";
+					if(newTable.equals("enzymes_annotation_homologySetup"))
+						query += ", null);";
+					else
+						query += ");";
 
 					//						System.out.println(query);
 
@@ -776,16 +771,16 @@ public class Merlin3ToMerlin4 {
 				catch (CommunicationsException e) {
 
 					if(error < LIMIT) {
-						
+
 						logger.error("Communications exception! Retrying...");
 
 						TimeUnit.MINUTES.sleep(1);
 
 						error++;
-						
+
 						this.oldConnection = new Connection(this.oldConnection.getDatabaseAccess());
 						this.newConnection = new Connection(this.newConnection.getDatabaseAccess());
-						
+
 						genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
 					}
 					//					System.out.println("Primary key constraint violation in table " + newTable);
@@ -861,16 +856,16 @@ public class Merlin3ToMerlin4 {
 				catch (CommunicationsException e) {
 
 					if(error < LIMIT) {
-						
+
 						logger.error("Communications exception! Retrying...");
 
 						TimeUnit.MINUTES.sleep(1);
 
 						error++;
-						
+
 						this.oldConnection = new Connection(this.oldConnection.getDatabaseAccess());
 						this.newConnection = new Connection(this.newConnection.getDatabaseAccess());
-						
+
 						genericDataRetrieverAndInjectionRespectingOrderAndBitsType(oldTable, newTable, positions, bitsType, error);
 					}
 					//					System.out.println("Primary key constraint violation in table " + newTable);
@@ -891,7 +886,7 @@ public class Merlin3ToMerlin4 {
 			e.printStackTrace();
 		}
 	}
-	
+
 	/**
 	 * @param l
 	 */
@@ -909,6 +904,13 @@ public class Merlin3ToMerlin4 {
 	public void propertyChange(PropertyChangeEvent evt) {
 
 		this.changes.firePropertyChange(evt.getPropertyName(), evt.getOldValue(), evt.getNewValue());				
+	}
+
+	/**
+	 * @param cancel the cancel to set
+	 */
+	public void setCancel(boolean cancel) {
+		this.cancel = new AtomicBoolean(cancel);
 	}
 
 }

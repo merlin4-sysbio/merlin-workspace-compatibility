@@ -23,6 +23,7 @@ import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationExceptio
 
 import es.uvigo.ei.aibench.workbench.Workbench;
 import pt.uminho.ceb.biosystems.merlin.core.utilities.Enumerators.SequenceType;
+import pt.uminho.ceb.biosystems.merlin.core.utilities.Enumerators.SourceType;
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Connection;
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.DatabaseUtilities;
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Enumerators.DatabaseType;
@@ -73,17 +74,23 @@ public class ModelConverter {
 					String firstHalf = "INSERT INTO model_subunit (model_gene_idgene, model_protein_idprotein";
 
 					String otherHalf = " VALUES (" + geneId + ", " + proteinId;
+					
+					String moduleId = null;
 
 					if(columns > 3)	{
-						firstHalf += ", model_module_id, gpr_status, note";
-						otherHalf += ", " + str(rs.getString(4), type) + ", " + gprStatus + ", " + str(rs.getString(6), type); 
-
+						
+						firstHalf += ", gpr_status, note";
+						otherHalf += ", " + gprStatus + ", " + str(rs.getString(6), type); 
+						moduleId = str(rs.getString(4), type);
 					}
-
 
 					String query = firstHalf + ")" + otherHalf + ");";
 
 					newStatement.execute(query);
+					
+					if(moduleId != null)
+						newStatement.execute("INSERT INTO model_subunit (model_module_id, model_gene_idgene, model_protein_idprotein) "
+								+ "VALUES (" + moduleId + ", " + geneId + ", " + proteinId + ");");
 
 					rs2.close();
 				} catch (JdbcSQLIntegrityConstraintViolationException e) {
@@ -166,10 +173,16 @@ public class ModelConverter {
 						isNonEnzymaticColumnName = "isnonenzymatic";
 						isSpontaneousColumnName = "isspontaneous";
 					}
-
+					
 					if(labelId == null) {
+						
+						String source = str(rs.getString(10), type);
+						
+						if(source != null && source.equalsIgnoreCase("SBML model"))
+							source = SourceType.SBML.toString();
+						
 						newStatement.execute("INSERT INTO model_reaction_labels (equation, " + isGenericColumnName + ", " + isNonEnzymaticColumnName + ", " + isSpontaneousColumnName + ", name, source) VALUES ("
-								+ str(rs.getString(3), type) + ", " + rs.getInt(7) + ", " + rs.getInt(9) + ", " + rs.getInt(8) + ", " + str(rs.getString(2), type) + ", " + str(rs.getString(10), type) +");");
+								+ str(rs.getString(3), type) + ", " + rs.getInt(7) + ", " + rs.getInt(9) + ", " + rs.getInt(8) + ", " + str(rs.getString(2), type) + ", " + source +");");
 
 						ResultSet rs3 = newStatement.executeQuery("SELECT LAST_INSERT_ID()");
 						rs3.next();
