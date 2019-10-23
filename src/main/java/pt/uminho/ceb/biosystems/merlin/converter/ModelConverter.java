@@ -168,11 +168,11 @@ public class ModelConverter {
 					String isNonEnzymaticColumnName = "isNonEnzymatic";
 					String isSpontaneousColumnName = "isSpontaneous";
 
-					if(newConnection.getDatabase_type().equals(DatabaseType.H2)) {
-						isGenericColumnName = "isgeneric";
-						isNonEnzymaticColumnName = "isnonenzymatic";
-						isSpontaneousColumnName = "isspontaneous";
-					}
+//					if(newConnection.getDatabase_type().equals(DatabaseType.H2)) {
+//						isGenericColumnName = "isgeneric";
+//						isNonEnzymaticColumnName = "isnonenzymatic";
+//						isSpontaneousColumnName = "isspontaneous";
+//					}
 					
 					if(labelId == null) {
 						
@@ -198,11 +198,11 @@ public class ModelConverter {
 					String lowerBoundColumnName = "lowerBound";
 					String upperBoundColumnName = "upperBound";
 
-					if(newConnection.getDatabase_type().equals(DatabaseType.H2)) {
-						inModelColumnName = "inmodel";
-						lowerBoundColumnName = "lowerbound";
-						upperBoundColumnName = "upperbound";
-					}
+//					if(newConnection.getDatabase_type().equals(DatabaseType.H2)) {
+//						inModelColumnName = "inmodel";
+//						lowerBoundColumnName = "lowerbound";
+//						upperBoundColumnName = "upperbound";
+//					}
 
 					Integer compartment = rs.getInt(12);
 
@@ -344,8 +344,8 @@ public class ModelConverter {
 
 					String inModelColumnName = "inModel";
 
-					if(newConnection.getDatabase_type().equals(DatabaseType.H2))
-						inModelColumnName = "inmodel";
+//					if(newConnection.getDatabase_type().equals(DatabaseType.H2))
+//						inModelColumnName = "inmodel";
 
 					String query = "INSERT INTO model_protein (idprotein, class, ecnumber, " + inModelColumnName + ", inchi, molecular_weight, molecular_weight_exp, "
 							+ "molecular_weight_kd, molecular_weight_seq, name, pi, source)  VALUES (" + proteinId + ", " + str(rs.getString(3), type) 

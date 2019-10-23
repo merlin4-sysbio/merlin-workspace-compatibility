@@ -629,8 +629,8 @@ public class Merlin3ToMerlin4 {
 			Statement oldStatement = oldConnection.createStatement();
 			Statement newStatement = newConnection.createStatement();
 
-			if(newConnection.getDatabase_type().equals(DatabaseType.H2))
-				newTable = newTable.toLowerCase();
+//			if(newConnection.getDatabase_type().equals(DatabaseType.H2))
+//				newTable = newTable.toLowerCase();
 
 			newStatement.execute("DELETE FROM " + newTable + ";");
 
@@ -723,8 +723,8 @@ public class Merlin3ToMerlin4 {
 			Statement oldStatement = oldConnection.createStatement();
 			Statement newStatement = newConnection.createStatement();
 
-			if(newConnection.getDatabase_type().equals(DatabaseType.H2))
-				newTable = newTable.toLowerCase();
+//			if(newConnection.getDatabase_type().equals(DatabaseType.H2))
+//				newTable = newTable.toLowerCase();
 
 			newStatement.execute("DELETE FROM " + newTable + ";");
 
@@ -814,8 +814,8 @@ public class Merlin3ToMerlin4 {
 			Statement oldStatement = oldConnection.createStatement();
 			Statement newStatement = newConnection.createStatement();
 
-			if(newConnection.getDatabase_type().equals(DatabaseType.H2))
-				newTable = newTable.toLowerCase();
+//			if(newConnection.getDatabase_type().equals(DatabaseType.H2))
+//				newTable = newTable.toLowerCase();
 
 			newStatement.execute("DELETE FROM " + newTable + ";");
 

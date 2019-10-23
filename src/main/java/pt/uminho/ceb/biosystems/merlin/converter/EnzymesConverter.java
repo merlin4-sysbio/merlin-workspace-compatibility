@@ -50,18 +50,18 @@ public class EnzymesConverter {
 
 			String newTable = "enzymes_annotation_geneHomology";
 
-			if(type.equals(DatabaseType.H2))
-				newTable = "enzymes_annotation_genehomology";
+//			if(type.equals(DatabaseType.H2))
+//				newTable = "enzymes_annotation_genehomology";
 
 			newStatement.execute("DELETE FROM " + newTable + ";");
 
 			String homologySetupColumnName = "homologySetup_s_key";
 			String locusTagColumnName = "locusTag";
 
-			if(type.equals(DatabaseType.H2)) {
-				homologySetupColumnName = "homologysetup_s_key";
-				locusTagColumnName = "locustag";
-			}
+//			if(type.equals(DatabaseType.H2)) {
+//				homologySetupColumnName = "homologysetup_s_key";
+//				locusTagColumnName = "locustag";
+//			}
 			
 			while(rs.next()) {
 
@@ -152,8 +152,8 @@ public class EnzymesConverter {
 
 			String newTable = "enzymes_annotation_homologySetup";
 
-			if(type.equals(DatabaseType.H2))
-				newTable = "enzymes_annotation_homologysetup";
+//			if(type.equals(DatabaseType.H2))
+//				newTable = "enzymes_annotation_homologysetup";
 
 			newStatement.execute("DELETE FROM " + newTable + ";");
 
@@ -161,13 +161,13 @@ public class EnzymesConverter {
 
 				try {
 
-					if(type.equals(DatabaseType.H2))
-						newStatement.execute("INSERT INTO " + newTable + " (s_key, program, program_version, databaseid, evalue, matrix, wordsize, gapcosts, maxnumberofalignments) VALUES ("
-								+ rs.getInt("s_key") + ", " + str(rs.getString("program"), type) + ", " + str(rs.getString("version"), type) + ", " + str(rs.getString("databaseid"), type) 
-								+ ", " +  str(rs.getString("evalue"), type) + ", " +  str(rs.getString("matrix"), type) + ", " +  str(rs.getString("wordsize"), type) + ", " +  str(rs.getString("gapcosts"), type)
-								+ ", " +  str(rs.getString("maxnumberofalignments"), type) + ");");
-							
-					else
+//					if(type.equals(DatabaseType.H2))
+//						newStatement.execute("INSERT INTO " + newTable + " (s_key, program, program_version, databaseid, evalue, matrix, wordsize, gapcosts, maxnumberofalignments) VALUES ("
+//								+ rs.getInt("s_key") + ", " + str(rs.getString("program"), type) + ", " + str(rs.getString("version"), type) + ", " + str(rs.getString("databaseid"), type) 
+//								+ ", " +  str(rs.getString("evalue"), type) + ", " +  str(rs.getString("matrix"), type) + ", " +  str(rs.getString("wordsize"), type) + ", " +  str(rs.getString("gapcosts"), type)
+//								+ ", " +  str(rs.getString("maxnumberofalignments"), type) + ");");
+//							
+//					else
 						newStatement.execute("INSERT INTO " + newTable + " (s_key, program, program_version, databaseID, eValue, matrix, wordSize, gapCosts, maxNumberOfAlignments) VALUES ("
 								+ rs.getInt("s_key") + ", " + str(rs.getString("program"), type) + ", " + str(rs.getString("version"), type) + ", " + str(rs.getString("databaseID"), type) 
 								+ ", " +  str(rs.getString("eValue"), type) + ", " +  str(rs.getString("matrix"), type) + ", " +  str(rs.getString("wordSize"), type) + ", " +  str(rs.getString("gapCosts"), type)
