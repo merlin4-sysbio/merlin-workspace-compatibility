@@ -42,10 +42,15 @@ public class Projects {
 			while(rs.next()) {
 
 				try {
+					
+					boolean latest = false;
+					
+					if(rs.getInt("latest_version") == 1)
+						latest = true;
 				
 					newStatement.execute("INSERT INTO projects (id, organism_id, latest_version, date, project_version,"
 							+ " organism_name, organism_lineage, compartments_tool) VALUES (" + rs.getInt("id") + ", " + rs.getInt("organism_id") 
-							+ ", " + str(rs.getString("latest_version"), type) + ", " +  str(rs.getString("date"), type) + ", " + str(rs.getString("version"), type)
+							+ ", " + latest + ", " +  str(rs.getString("date"), type) + ", " + str(rs.getString("version"), type)
 							+ ", " +  str(rs.getString("organism_name"), type) + ", " +  str(rs.getString("organism_lineage"), type) + ", " +  str(rs.getString("compartments_tool"), type) + ");");
 					
 

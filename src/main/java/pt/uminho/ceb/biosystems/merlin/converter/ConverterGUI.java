@@ -34,6 +34,7 @@ import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.DatabaseAcce
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Enumerators.DatabaseType;
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.H2DatabaseAccess;
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.MySQLDatabaseAccess;
+import pt.uminho.ceb.biosystems.merlin.services.DatabaseServices;
 import pt.uminho.ceb.biosystems.merlin.services.ProjectServices;
 import pt.uminho.ceb.biosystems.merlin.utilities.io.ConfFileReader;
 import pt.uminho.ceb.biosystems.merlin.utilities.io.FileUtils;
@@ -56,22 +57,15 @@ public class ConverterGUI implements PropertyChangeListener {
 	private static final Logger logger = LoggerFactory.getLogger(ConverterGUI.class);
 
 	@Port(direction=Direction.INPUT, name="new workspace name", description="write the new workspace's name", validateMethod = "checkIfValidName", order=2)
-	public void setNewWorkspaceName(String newWorkspaceName) {
+	public void setNewWorkspaceName(String newWorkspaceName) throws Exception {
 
-		try {
-			List<String> names = InitDataAccess.getInstance().getDatabasesAvailable();
+			List<String> names = DatabaseServices.getDatabasesAvailable();
 
 			if(names.contains(newWorkspaceName) && !override)
 				throw new Exception("workspace name already in use, please select a different name! "
 						+ "If you wish to override an existing database, please select 'force database creation' at this operations' menu.");
 			else
 				this.newWorkspaceName = newWorkspaceName;
-
-		} 
-		catch (Exception e) {
-			Workbench.getInstance().error(e);
-			e.printStackTrace();
-		}
 
 	}
 
@@ -91,7 +85,7 @@ public class ConverterGUI implements PropertyChangeListener {
 			
 			this.progress.setTime((GregorianCalendar.getInstance().getTimeInMillis() - startTime), 0, this.dataSize, "initializing new database in merlin 4");
 			
-			InitDataAccess.getInstance().generateDatabase(this.newWorkspaceName);
+			DatabaseServices.generateDatabase(this.newWorkspaceName);
 			
 			this.merlinDirectoryPath = merlinDirectory.getAbsolutePath().concat("/");
 
@@ -119,7 +113,7 @@ public class ConverterGUI implements PropertyChangeListener {
 			
 			Long taxId = Long.valueOf(ProjectServices.getOrganismID(this.newWorkspaceName).toString());
 			
-			InitDataAccess.getInstance().dropConnection(this.newWorkspaceName);
+			DatabaseServices.dropConnection(this.newWorkspaceName);
 			
 			this.executeChange(1);
 			
@@ -136,6 +130,10 @@ public class ConverterGUI implements PropertyChangeListener {
 			
 			Workbench.getInstance().info("workspace successfully imported!");
 		} 
+		catch (IOException e) {
+			Workbench.getInstance().warn("All data was successfully converted, however the workspace folder in merlin 3 was not found!");
+			e.printStackTrace();
+		}
 		catch (Exception e) {
 			Workbench.getInstance().error("An error occurred while converting the workspace!");
 			e.printStackTrace();
@@ -333,7 +331,7 @@ public class ConverterGUI implements PropertyChangeListener {
 		if(result==0) {
 			
 			progress.setTime((GregorianCalendar.getInstance().getTimeInMillis()-GregorianCalendar.getInstance().getTimeInMillis()),1,1);
-			InitDataAccess.getInstance().getDatabaseExporterBatchService(this.newWorkspaceName).setCancel(true);
+			DatabaseServices.setCancelExporterBatch(this.newWorkspaceName, true);
 			logger.warn("export workspace operation canceled!");
 			Workbench.getInstance().warn("Please hold on. Your operation is being cancelled.");
 		}
