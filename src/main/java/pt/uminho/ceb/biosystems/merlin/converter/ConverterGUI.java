@@ -28,14 +28,12 @@ import es.uvigo.ei.aibench.workbench.Workbench;
 import pt.uminho.ceb.biosystems.merlin.aibench.gui.CustomGUI;
 import pt.uminho.ceb.biosystems.merlin.aibench.utilities.TimeLeftProgress;
 import pt.uminho.ceb.biosystems.merlin.bioapis.externalAPI.utilities.Enumerators.FileExtensions;
-import pt.uminho.ceb.biosystems.merlin.dataAccess.InitDataAccess;
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Connection;
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.DatabaseAccess;
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Enumerators.DatabaseType;
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.H2DatabaseAccess;
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.MySQLDatabaseAccess;
 import pt.uminho.ceb.biosystems.merlin.services.DatabaseServices;
-import pt.uminho.ceb.biosystems.merlin.services.ProjectServices;
 import pt.uminho.ceb.biosystems.merlin.utilities.io.ConfFileReader;
 import pt.uminho.ceb.biosystems.merlin.utilities.io.FileUtils;
 
@@ -87,6 +85,8 @@ public class ConverterGUI implements PropertyChangeListener {
 			
 			DatabaseServices.generateDatabase(this.newWorkspaceName);
 			
+			DatabaseServices.dropConnection(this.newWorkspaceName);
+			
 			this.merlinDirectoryPath = merlinDirectory.getAbsolutePath().concat("/");
 
 			DatabaseAccess newDBAccess = generateNewDatabaseDBAccess();
@@ -111,9 +111,7 @@ public class ConverterGUI implements PropertyChangeListener {
 			
 			this.executeChange(0);
 			
-			Long taxId = Long.valueOf(ProjectServices.getOrganismID(this.newWorkspaceName).toString());
-			
-			DatabaseServices.dropConnection(this.newWorkspaceName);
+			Long taxId = Long.valueOf(this.converter.getTaxId());
 			
 			this.executeChange(1);
 			

@@ -75,22 +75,22 @@ public class ModelConverter {
 
 					String otherHalf = " VALUES (" + geneId + ", " + proteinId;
 					
-					String moduleId = null;
+//					String moduleId = null;
 
 					if(columns > 3)	{
 						
 						firstHalf += ", gpr_status, note";
 						otherHalf += ", " + gprStatus + ", " + str(rs.getString(6), type); 
-						moduleId = str(rs.getString(4), type);
+//						moduleId = str(rs.getString(4), type);
 					}
 
 					String query = firstHalf + ")" + otherHalf + ");";
 
 					newStatement.execute(query);
 					
-					if(moduleId != null)
-						newStatement.execute("INSERT INTO model_subunit (model_module_id, model_gene_idgene, model_protein_idprotein) "
-								+ "VALUES (" + moduleId + ", " + geneId + ", " + proteinId + ");");
+//					if(moduleId != null)
+//						newStatement.execute("INSERT INTO model_subunit (model_module_id, model_gene_idgene, model_protein_idprotein) "
+//								+ "VALUES (" + moduleId + ", " + geneId + ", " + proteinId + ");");
 
 					rs2.close();
 				} catch (JdbcSQLIntegrityConstraintViolationException e) {

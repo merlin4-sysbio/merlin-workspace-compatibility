@@ -37,6 +37,7 @@ public class Merlin3ToMerlin4 {
 	private List<String> modelTables;
 	private Integer counter = 0;
 	private AtomicBoolean cancel;
+	private Integer taxId;
 
 	private PropertyChangeSupport changes;
 
@@ -67,7 +68,7 @@ public class Merlin3ToMerlin4 {
 
 			logger.info("importing projects table...");
 
-			convertProjects();
+			this.taxId = convertProjects();
 
 			logger.info("importing interpro tables...");
 
@@ -87,7 +88,6 @@ public class Merlin3ToMerlin4 {
 		} 
 		catch (InterruptedException e) {
 			Workbench.getInstance().error(e);
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -116,12 +116,14 @@ public class Merlin3ToMerlin4 {
 	 * Convertion of projects table
 	 * @throws InterruptedException 
 	 */
-	public void convertProjects() throws InterruptedException {
+	public Integer convertProjects() throws InterruptedException {
 
-		Projects.projects(oldConnection, newConnection, 0);
+		Integer taxId = Projects.projects(oldConnection, newConnection, 0);
 
 		counter++;
 		this.changes.firePropertyChange("tablesCounter", null, counter);
+		
+		return taxId;
 	}
 
 	/**
@@ -885,6 +887,13 @@ public class Merlin3ToMerlin4 {
 			Workbench.getInstance().error(e);
 			e.printStackTrace();
 		}
+	}
+
+	/**
+	 * @return the taxId
+	 */
+	public Integer getTaxId() {
+		return taxId;
 	}
 
 	/**

@@ -27,7 +27,7 @@ public class Projects {
 	 * @param newTable
 	 * @throws InterruptedException 
 	 */
-	public static void projects(Connection oldConnection, Connection newConnection, int error) throws InterruptedException {
+	public static Integer projects(Connection oldConnection, Connection newConnection, int error) throws InterruptedException {
 
 		try {
 			Statement oldStatement = oldConnection.createStatement();
@@ -38,6 +38,10 @@ public class Projects {
 			DatabaseType type = newConnection.getDatabase_type();
 
 			ResultSet rs = oldStatement.executeQuery("SELECT * FROM projects;");
+			
+			Integer id = null;
+			Integer taxId = rs.getInt("organism_id");
+			String compTool = null;
 
 			while(rs.next()) {
 
@@ -47,6 +51,22 @@ public class Projects {
 					
 					if(rs.getInt("latest_version") == 1)
 						latest = true;
+					
+					if(latest) {
+						if(id == null) {
+							id = rs.getInt("id");
+							taxId = rs.getInt("organism_id");
+							compTool = str(rs.getString("compartments_tool"), type);
+						}
+						else if(compTool == null && str(rs.getString("compartments_tool"), type) != null){
+							newStatement.execute("UPDATE projects SET latest_version = FALSE WHERE id = " + id + ";");
+							id = rs.getInt("id");
+							taxId = rs.getInt("organism_id");
+							compTool = str(rs.getString("compartments_tool"), type);
+						}
+						else if(id != null)
+							latest = false;
+					}
 				
 					newStatement.execute("INSERT INTO projects (id, organism_id, latest_version, date, project_version,"
 							+ " organism_name, organism_lineage, compartments_tool) VALUES (" + rs.getInt("id") + ", " + rs.getInt("organism_id") 
@@ -86,11 +106,15 @@ public class Projects {
 
 			oldStatement.close();
 			newStatement.close();
+			
+			return taxId;
 		} 
 		catch (SQLException e) {
 			Workbench.getInstance().error(e);
 			e.printStackTrace();
 		}
+		return null;
+		
 	}
 
 	public static String str(String word, DatabaseType type) {
