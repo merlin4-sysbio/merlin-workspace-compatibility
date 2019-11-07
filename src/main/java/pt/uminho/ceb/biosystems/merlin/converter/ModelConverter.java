@@ -47,44 +47,44 @@ public class ModelConverter {
 
 			newStatement.execute("DELETE FROM model_subunit;");
 
-			DatabaseType type = newConnection.getDatabase_type();
+//			DatabaseType type = newConnection.getDatabase_type();
 
 			ResultSet rs = oldStatement.executeQuery("SELECT * FROM subunit;");
 
 			ResultSetMetaData rsmd = rs.getMetaData();
 
-			int columns = rsmd.getColumnCount();
+//			int columns = rsmd.getColumnCount();
 
 			while(rs.next()) {
 
 				Integer geneId = rs.getInt(1);
 
-				String gprStatus = null;
+//				String gprStatus = null;
 
-				String ec =  str(rs.getString(3), type);
+//				String ec =  str(rs.getString(3), type);
 				Integer proteinId = rs.getInt(2);
 
 				try {
 
-					ResultSet rs2 = oldStatement2.executeQuery("SELECT gpr_status FROM enzyme WHERE protein_idprotein = " + proteinId + " AND ecnumber = " + ec + ";");
+//					ResultSet rs2 = oldStatement2.executeQuery("SELECT gpr_status FROM enzyme WHERE protein_idprotein = " + proteinId + " AND ecnumber = " + ec + ";");
 
-					if(rs2.next())
-						gprStatus = str(rs2.getString(1), type);
+//					if(rs2.next())
+//						gprStatus = str(rs2.getString(1), type);
 
-					String firstHalf = "INSERT INTO model_subunit (model_gene_idgene, model_protein_idprotein";
+					String query = "INSERT INTO model_subunit (model_gene_idgene, model_protein_idprotein VALUES (" + geneId + ", " + proteinId + ");";
 
-					String otherHalf = " VALUES (" + geneId + ", " + proteinId;
+//					String otherHalf = "";
 					
 //					String moduleId = null;
 
-					if(columns > 3)	{
-						
-						firstHalf += ", gpr_status, note";
-						otherHalf += ", " + gprStatus + ", " + str(rs.getString(6), type); 
-//						moduleId = str(rs.getString(4), type);
-					}
+//					if(columns > 3)	{
+//						
+//						firstHalf += ", gpr_status, note";
+//						otherHalf += ", " + gprStatus + ", " + str(rs.getString(6), type); 
+////						moduleId = str(rs.getString(4), type);
+//					}
 
-					String query = firstHalf + ")" + otherHalf + ");";
+//					String query = firstHalf + ")" + otherHalf + ");";
 
 					newStatement.execute(query);
 					
@@ -92,7 +92,7 @@ public class ModelConverter {
 //						newStatement.execute("INSERT INTO model_subunit (model_module_id, model_gene_idgene, model_protein_idprotein) "
 //								+ "VALUES (" + moduleId + ", " + geneId + ", " + proteinId + ");");
 
-					rs2.close();
+//					rs2.close();
 				} catch (JdbcSQLIntegrityConstraintViolationException e) {
 					System.out.println("Primary key constraint violation geneId = " + geneId + " and proteinId = " + proteinId);
 					//					e.printStackTrace();
