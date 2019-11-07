@@ -51,7 +51,7 @@ public class ModelConverter {
 
 			ResultSet rs = oldStatement.executeQuery("SELECT * FROM subunit;");
 
-			ResultSetMetaData rsmd = rs.getMetaData();
+//			ResultSetMetaData rsmd = rs.getMetaData();
 
 //			int columns = rsmd.getColumnCount();
 
