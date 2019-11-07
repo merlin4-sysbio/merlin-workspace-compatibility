@@ -40,12 +40,14 @@ public class Projects {
 			ResultSet rs = oldStatement.executeQuery("SELECT * FROM projects;");
 			
 			Integer id = null;
-			Integer taxId = rs.getInt("organism_id");
+			Integer taxId = null;
 			String compTool = null;
 
 			while(rs.next()) {
 
 				try {
+					
+					taxId = rs.getInt("organism_id");
 					
 					boolean latest = false;
 					

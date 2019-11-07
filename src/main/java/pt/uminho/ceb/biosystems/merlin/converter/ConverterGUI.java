@@ -51,12 +51,14 @@ public class ConverterGUI implements PropertyChangeListener {
 	private static String today = setToday();
 	private boolean override = false;
 	private Merlin3ToMerlin4 converter;
-	
+	private boolean go = false;
+
 	private static final Logger logger = LoggerFactory.getLogger(ConverterGUI.class);
 
 	@Port(direction=Direction.INPUT, name="new workspace name", description="write the new workspace's name", validateMethod = "checkIfValidName", order=2)
-	public void setNewWorkspaceName(String newWorkspaceName) throws Exception {
+	public void setNewWorkspaceName(String newWorkspaceName) {
 
+		try {
 			List<String> names = DatabaseServices.getDatabasesAvailable();
 
 			if(names.contains(newWorkspaceName) && !override)
@@ -64,6 +66,13 @@ public class ConverterGUI implements PropertyChangeListener {
 						+ "If you wish to override an existing database, please select 'force database creation' at this operations' menu.");
 			else
 				this.newWorkspaceName = newWorkspaceName;
+
+			this.go = true;
+		} 
+		catch (Exception e) {
+			Workbench.getInstance().error(e);
+			e.printStackTrace();
+		}
 
 	}
 
@@ -76,69 +85,72 @@ public class ConverterGUI implements PropertyChangeListener {
 
 	@Port(direction=Direction.INPUT, name="merlin 3 home directory", description="select the home directory of merlin 3", order=4)
 	public void setNewProject(File merlinDirectory) {
-		
-		try {
-			
-			this.startTime = GregorianCalendar.getInstance().getTimeInMillis();
-			
-			this.progress.setTime((GregorianCalendar.getInstance().getTimeInMillis() - startTime), 0, this.dataSize, "initializing new database in merlin 4");
-			
-			DatabaseServices.generateDatabase(this.newWorkspaceName);
-			
-			DatabaseServices.dropConnection(this.newWorkspaceName);
-			
-			this.merlinDirectoryPath = merlinDirectory.getAbsolutePath().concat("/");
 
-			DatabaseAccess newDBAccess = generateNewDatabaseDBAccess();
-			DatabaseAccess oldDBAccess = generateOldDatabaseDBAccess();
+		if(this.go) {
 
-			Connection newConnection = new Connection(newDBAccess);
-			Connection oldConnection = new Connection(oldDBAccess);
+			try {
 
-			this.converter = new Merlin3ToMerlin4(oldConnection, newConnection);
+				this.startTime = GregorianCalendar.getInstance().getTimeInMillis();
 
-			this.converter.addPropertyChangeListener(this);
+				this.progress.setTime((GregorianCalendar.getInstance().getTimeInMillis() - startTime), 0, this.dataSize, "initializing new database in merlin 4");
 
-			this.converter.start();
+				DatabaseServices.generateDatabase(this.newWorkspaceName);
 
-			oldConnection.closeConnection();
-			newConnection.closeConnection();
-			
-			this.startTime = GregorianCalendar.getInstance().getTimeInMillis();
-			
-			this.dataSize = 3;
-			this.message = "importing workspace files and configurations";
-			
-			this.executeChange(0);
-			
-			Long taxId = Long.valueOf(this.converter.getTaxId());
-			
-			this.executeChange(1);
-			
-			importWorkspaceFiles();
-			
-			this.executeChange(2);
-			
-			FileExtensions extension = checkIfGenomeLoaded(taxId);
-			
-			if(extension != null)
-				updateNewLogFile(this.newWorkspaceName, taxId, extension);
-			
-			this.executeChange(3);
-			
-			Workbench.getInstance().info("workspace successfully imported!");
-		} 
-		catch (IOException e) {
-			Workbench.getInstance().warn("All data was successfully converted, however the workspace folder in merlin 3 was not found!");
-			e.printStackTrace();
+				DatabaseServices.dropConnection(this.newWorkspaceName);
+
+				this.merlinDirectoryPath = merlinDirectory.getAbsolutePath().concat("/");
+
+				DatabaseAccess newDBAccess = generateNewDatabaseDBAccess();
+				DatabaseAccess oldDBAccess = generateOldDatabaseDBAccess();
+
+				Connection newConnection = new Connection(newDBAccess);
+				Connection oldConnection = new Connection(oldDBAccess);
+
+				this.converter = new Merlin3ToMerlin4(oldConnection, newConnection);
+
+				this.converter.addPropertyChangeListener(this);
+
+				this.converter.start();
+
+				oldConnection.closeConnection();
+				newConnection.closeConnection();
+
+				this.startTime = GregorianCalendar.getInstance().getTimeInMillis();
+
+				this.dataSize = 3;
+				this.message = "importing workspace files and configurations";
+
+				this.executeChange(0);
+
+				Long taxId = Long.valueOf(this.converter.getTaxId());
+
+				this.executeChange(1);
+
+				importWorkspaceFiles();
+
+				this.executeChange(2);
+
+				FileExtensions extension = checkIfGenomeLoaded(taxId);
+
+				if(extension != null)
+					updateNewLogFile(this.newWorkspaceName, taxId, extension);
+
+				this.executeChange(3);
+
+				Workbench.getInstance().info("workspace successfully imported!");
+			} 
+			catch (IOException e) {
+				Workbench.getInstance().warn("All data was successfully converted, however the workspace folder in merlin 3 was not found!");
+				e.printStackTrace();
+			}
+			catch (Exception e) {
+				Workbench.getInstance().error("An error occurred while converting the workspace!");
+				e.printStackTrace();
+			}
 		}
-		catch (Exception e) {
-			Workbench.getInstance().error("An error occurred while converting the workspace!");
-			e.printStackTrace();
-		}
-		
+
 	}
-	
+
 	@Port(direction=Direction.INPUT, name="force database creation", description="this command forces merlin to create a database with the seleted name. If a database with such name already exists, it will be replaced",
 			advanced = true, defaultValue = "false", order=1)
 	public void setOldWorkspaceName(boolean override) {
@@ -146,24 +158,24 @@ public class ConverterGUI implements PropertyChangeListener {
 		this.override = override;
 
 	}
-	
+
 	private FileExtensions checkIfGenomeLoaded(long taxId) {
-		
+
 		File workspace = new File(FileUtils.getWorkspaceTaxonomyFolderPath(this.newWorkspaceName, taxId));
-		
+
 		File[] files = workspace.listFiles();
-		
+
 		for(File file : files) {
-			
+
 			if(file.getName().equals(FileExtensions.PROTEIN_FAA.getName()))
 				return FileExtensions.PROTEIN_FAA;
 			else if(file.getName().equals(FileExtensions.GENOMIC_FNA.getName()))
 				return FileExtensions.GENOMIC_FNA;
 		}
-		
+
 		return null;
 	}
-	
+
 	/**
 	 * @param databaseName
 	 * @param taxID
@@ -216,17 +228,17 @@ public class ConverterGUI implements PropertyChangeListener {
 		}
 
 	}
-	
+
 	private void importWorkspaceFiles() throws IOException {
-		
+
 		File newWorkspace = new File(FileUtils.getWorkspaceFolderPath(this.newWorkspaceName));
-		
+
 		newWorkspace.mkdirs();
 
 		File oldWorkspace = new File(this.merlinDirectoryPath + "/ws/" + this.oldWorkspaceName);
-		
+
 		org.apache.commons.io.FileUtils.copyDirectory(oldWorkspace, newWorkspace);
-		
+
 	}
 
 	/**
@@ -237,7 +249,7 @@ public class ConverterGUI implements PropertyChangeListener {
 		Map<String, String> settings = ConfFileReader.loadConf(FileUtils.getConfFolderPath()+"/database_settings.conf");
 		DatabaseType dbType = DatabaseType.MYSQL;
 
-		
+
 		String userName = settings.get("username");
 		String password = settings.get("password");
 		String host = settings.get("host");
@@ -248,8 +260,8 @@ public class ConverterGUI implements PropertyChangeListener {
 			userName = settings.get("h2_username");
 			password = settings.get("h2_password");
 		}
-		
-		
+
+
 		return generateDBAccess(host, this.newWorkspaceName, password, port, userName, dbType);
 	}
 
@@ -266,7 +278,7 @@ public class ConverterGUI implements PropertyChangeListener {
 		String password = settings.get("password");
 		String host = settings.get("host");
 		String port = settings.get("port");
-		
+
 		if(settings.get("dbtype").equals("h2")) {
 			dbType = DatabaseType.H2;
 			userName = settings.get("h2_username");
@@ -294,7 +306,7 @@ public class ConverterGUI implements PropertyChangeListener {
 		else
 			return new H2DatabaseAccess(username, password, databaseName, host);
 	}
-	
+
 	/**
 	 * @return
 	 */
@@ -327,7 +339,7 @@ public class ConverterGUI implements PropertyChangeListener {
 		int result=CustomGUI.stopQuestion("cancel confirmation", "are you sure you want to cancel the operation?", options);
 
 		if(result==0) {
-			
+
 			progress.setTime((GregorianCalendar.getInstance().getTimeInMillis()-GregorianCalendar.getInstance().getTimeInMillis()),1,1);
 			DatabaseServices.setCancelExporterBatch(this.newWorkspaceName, true);
 			logger.warn("export workspace operation canceled!");
@@ -351,9 +363,9 @@ public class ConverterGUI implements PropertyChangeListener {
 			executeChange(counter);
 		}
 	}
-	
+
 	public void executeChange(int counter) {
-		
+
 		this.progress.setTime((GregorianCalendar.getInstance().getTimeInMillis() - startTime), counter, this.dataSize, this.message);
 	}
 
