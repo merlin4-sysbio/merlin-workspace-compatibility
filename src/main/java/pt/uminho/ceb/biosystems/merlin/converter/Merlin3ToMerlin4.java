@@ -281,16 +281,7 @@ public class Merlin3ToMerlin4 {
 						genericDataRetrieverAndInjectionRespectingOrderAndBitsType(oldTable, newTable, positions, bits, error);
 					}
 					else if(newTable.equalsIgnoreCase("model_module")) {
-						positions.add(1);
-						positions.add(6);
-						positions.add(3);
-						positions.add(7);
-						positions.add(5);
-						positions.add(2);
-						positions.add(4);
-						positions.add(8);
-
-						genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
+						ModelConverter.module(this.oldConnection, this.newConnection, error);
 					}
 					else if(newTable.equalsIgnoreCase("model_pathway_has_compound")) {
 						positions.add(2);
@@ -376,7 +367,7 @@ public class Merlin3ToMerlin4 {
 					else if(newTable.equalsIgnoreCase("model_reaction")) {
 						ModelConverter.reaction(this.oldConnection, this.newConnection, error);
 					}
-					else if(!newTable.equalsIgnoreCase("model_reaction_labels") && !newTable.equalsIgnoreCase("model_subunit_has_model_module"))
+					else if(!newTable.equalsIgnoreCase("model_reaction_labels") && !newTable.equalsIgnoreCase("model_subunit_has_model_module") && !newTable.equalsIgnoreCase("model_module_has_model_protein"))
 						genericDataRetrieverAndInjection(oldTable, newTable, error);
 
 					counter++;

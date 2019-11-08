@@ -194,7 +194,7 @@ public class EnzymesConverter {
 						oldConnection = new Connection(oldConnection.getDatabaseAccess());
 						newConnection = new Connection(newConnection.getDatabaseAccess());
 						
-						geneHomology(oldConnection, newConnection, error);
+						homologySetup(oldConnection, newConnection, error);
 					}
 					//					System.out.println("Primary key constraint violation in table " + newTable);
 					//					e.printStackTrace();

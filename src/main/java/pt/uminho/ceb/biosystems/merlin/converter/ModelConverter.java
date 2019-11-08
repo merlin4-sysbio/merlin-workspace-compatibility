@@ -71,7 +71,7 @@ public class ModelConverter {
 //					if(rs2.next())
 //						gprStatus = str(rs2.getString(1), type);
 
-					String query = "INSERT INTO model_subunit (model_gene_idgene, model_protein_idprotein VALUES (" + geneId + ", " + proteinId + ");";
+					String query = "INSERT INTO model_subunit (model_gene_idgene, model_protein_idprotein) VALUES (" + geneId + ", " + proteinId + ");";
 
 //					String otherHalf = "";
 					
@@ -590,6 +590,78 @@ public class ModelConverter {
 	 * @param newTable
 	 * @throws InterruptedException 
 	 */
+	public static void module(Connection oldConnection, Connection newConnection, int error) throws InterruptedException {
+
+		try {
+			Statement oldStatement = oldConnection.createStatement();
+			Statement newStatement = newConnection.createStatement();
+
+			String newTable = "model_module";
+			String oldTable = "module";
+			
+			newStatement.execute("DELETE FROM " + newTable + ";");
+
+			ResultSet rs = oldStatement.executeQuery("SELECT * FROM " + oldTable + ";");
+			
+			DatabaseType type = oldConnection.getDatabase_type();
+
+			while(rs.next()) {
+
+				try {
+					String query = "INSERT INTO " + newTable + " (id, definition, entry_id, hieralchical_class, name, reaction, stoichiometry, type) VALUES ("
+							+ rs.getInt("id") + "," + str(rs.getString("definition"), type)+ "," + str(rs.getString("entry_id"), type)+ "," + str(rs.getString("hieralchical_class"), type)+ ","
+									 + str(rs.getString("name"), type)+ "," + str(rs.getString("reaction"), type)+ "," + str(rs.getString("stoichiometry"), type)+ "," + str(rs.getString("type"), type)+ ");";
+
+
+//											System.out.println(query);
+
+					newStatement.execute(query);
+				} catch (JdbcSQLIntegrityConstraintViolationException e) {
+					//					System.out.println("Primary key constraint violation in table " + newTable);
+					//											e.printStackTrace();
+				}
+				catch (MySQLIntegrityConstraintViolationException e) {
+					//					System.out.println("Primary key constraint violation in table " + newTable);
+					//											e.printStackTrace();
+				}
+				catch (CommunicationsException e) {
+
+					if(error < LIMIT) {
+						
+						logger.error("Communications exception! Retrying...");
+
+						TimeUnit.MINUTES.sleep(1);
+
+						error++;
+						
+						oldConnection = new Connection(oldConnection.getDatabaseAccess());
+						newConnection = new Connection(newConnection.getDatabaseAccess());
+						
+						module(oldConnection, newConnection, error);
+					}
+					//					System.out.println("Primary key constraint violation in table " + newTable);
+					//					e.printStackTrace();
+				}
+				//				}
+			}
+
+			rs.close();
+
+			oldStatement.close();
+			newStatement.close();
+		} 
+		catch (SQLException e) {
+
+			Workbench.getInstance().error(e);
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * @param oldTable
+	 * @param newTable
+	 * @throws InterruptedException 
+	 */
 	public static void pathway(Connection oldConnection, Connection newConnection, List<Integer> positions, int error) throws InterruptedException {
 
 		try {
@@ -662,7 +734,7 @@ public class ModelConverter {
 						oldConnection = new Connection(oldConnection.getDatabaseAccess());
 						newConnection = new Connection(newConnection.getDatabaseAccess());
 						
-						stoichiometry(oldConnection, newConnection, positions, error);
+						pathway(oldConnection, newConnection, positions, error);
 					}
 					//					System.out.println("Primary key constraint violation in table " + newTable);
 					//					e.printStackTrace();
