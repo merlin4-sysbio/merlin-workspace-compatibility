@@ -1,19 +1,13 @@
 package pt.uminho.ceb.biosystems.merlin.converter;
 
-import java.io.File;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import org.biojava.nbio.core.sequence.ProteinSequence;
-import org.biojava.nbio.core.sequence.io.FastaReaderHelper;
 import org.h2.jdbc.JdbcSQLIntegrityConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +16,6 @@ import com.mysql.jdbc.exceptions.jdbc4.CommunicationsException;
 import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
 
 import es.uvigo.ei.aibench.workbench.Workbench;
-import pt.uminho.ceb.biosystems.merlin.core.utilities.Enumerators.SequenceType;
 import pt.uminho.ceb.biosystems.merlin.core.utilities.Enumerators.SourceType;
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Connection;
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.DatabaseUtilities;
@@ -45,7 +38,7 @@ public class ModelConverter {
 			Statement oldStatement2 = oldConnection.createStatement();
 			Statement newStatement = newConnection.createStatement();
 
-			newStatement.execute("DELETE FROM model_subunit;");
+//			newStatement.execute("DELETE FROM model_subunit;");
 
 //			DatabaseType type = newConnection.getDatabase_type();
 
@@ -149,8 +142,8 @@ public class ModelConverter {
 
 			ResultSet rs = oldStatement.executeQuery("SELECT * FROM reaction;");
 
-			newStatement.execute("DELETE FROM model_reaction_labels;");
-			newStatement.execute("DELETE FROM model_reaction;");
+//			newStatement.execute("DELETE FROM model_reaction_labels;");
+//			newStatement.execute("DELETE FROM model_reaction;");
 
 			while(rs.next()) {
 
@@ -205,6 +198,9 @@ public class ModelConverter {
 //					}
 
 					Integer compartment = rs.getInt(12);
+					
+					if(compartment < 1)
+						compartment = null;
 
 					String lowerBound = "'-999999'";
 					String upperBound = "'999999'";
@@ -318,7 +314,7 @@ public class ModelConverter {
 			Statement oldStatement2 = oldConnection.createStatement();
 			Statement newStatement = newConnection.createStatement();
 
-			newStatement.execute("DELETE FROM model_protein;");
+//			newStatement.execute("DELETE FROM model_protein;");
 
 			DatabaseType type = newConnection.getDatabase_type();
 
@@ -405,57 +401,62 @@ public class ModelConverter {
 			Statement oldStatement2 = oldConnection.createStatement();			
 			Statement newStatement = newConnection.createStatement();
 
-			newStatement.execute("DELETE FROM model_sequence;");
+//			newStatement.execute("DELETE FROM model_sequence;");
 
 			DatabaseType type = newConnection.getDatabase_type();
 
-			int sequenceCount = 0;
-			int geneCount = 0;
+//			int sequenceCount = 0;
+//			int geneCount = 0;
 
 			ResultSet rs = oldStatement.executeQuery("SELECT count(idsequence) FROM sequence;");
 
-			if(rs.next())
-				sequenceCount = rs.getInt(1);
-
-			rs = oldStatement.executeQuery("SELECT count(idgene) FROM gene;");
-
-			if(rs.next())
-				geneCount = rs.getInt(1);
-
-			if(sequenceCount == 0 && geneCount > 0) {
-
-				Map<String, Integer> genes = new HashMap<>();
-
-				ResultSet rs2 = newStatement.executeQuery("SELECT * FROM model_gene;");
-
-				while(rs2.next())
-					genes.put(rs2.getString("query"), rs2.getInt("idgene"));
-
-				LinkedHashMap<String, ProteinSequence> sequences = FastaReaderHelper.readFastaProteinSequence(new File("C:\\Users\\BioSystems\\Downloads\\emanuel.faa"));
-
-				for(String seqId : sequences.keySet()) {
-
-					Integer geneId = null;
-					String sequence = sequences.get(seqId).getSequenceAsString();
-
-
-					if(genes.containsKey(seqId))
-						geneId = genes.get(seqId);
-
-					oldStatement.execute("INSERT INTO sequence (sequence_type, sequence, sequence_length, gene_idgene) "
-							+ "VALUES ('" + SequenceType.PROTEIN + "', '" + sequence + "', " + sequence.length() + ", " + geneId + ");");
-
-				}
-
-				rs2.close();
-			}
-
+//			if(rs.next())
+//				sequenceCount = rs.getInt(1);
+//
+//			rs = oldStatement.executeQuery("SELECT count(idgene) FROM gene;");
+//
+//			if(rs.next())
+//				geneCount = rs.getInt(1);
+//
+//			if(sequenceCount == 0 && geneCount > 0) {
+//
+//				Map<String, Integer> genes = new HashMap<>();
+//
+//				ResultSet rs2 = newStatement.executeQuery("SELECT * FROM model_gene;");
+//
+//				while(rs2.next())
+//					genes.put(rs2.getString("query"), rs2.getInt("idgene"));
+//
+//				LinkedHashMap<String, ProteinSequence> sequences = FastaReaderHelper.readFastaProteinSequence(new File("C:\\Users\\BioSystems\\Downloads\\emanuel.faa"));
+//				
+//				for(String seqId : sequences.keySet()) {
+//
+//					Integer geneId = null;
+//					String sequence = sequences.get(seqId).getSequenceAsString();
+//
+//
+//					if(genes.containsKey(seqId))
+//						geneId = genes.get(seqId);
+//
+//					oldStatement.execute("INSERT INTO sequence (sequence_type, sequence, sequence_length, gene_idgene) "
+//							+ "VALUES ('" + SequenceType.PROTEIN + "', '" + sequence + "', " + sequence.length() + ", " + geneId + ");");
+//
+//				}
+//
+//				rs2.close();
+//			}
+			
 			rs = oldStatement.executeQuery("SELECT * FROM sequence;");
 
 			while(rs.next()) {
-
+				
+				Integer sequenceId = rs.getInt(2);
+				
+				if(sequenceId < 1)
+					sequenceId = null;
+				
 				newStatement.execute("INSERT INTO model_sequence (idsequence, sequence_type, sequence, sequence_length, model_gene_idgene) "
-						+ "VALUES (" + rs.getInt(1) + ", " + str(rs.getString(3), type) + ", " + str(rs.getString(4), type) + ", " + rs.getInt(5) + ", " + rs.getInt(2) + ");");
+						+ "VALUES (" + rs.getInt(1) + ", " + str(rs.getString(3), type) + ", " + str(rs.getString(4), type) + ", " + rs.getInt(5) + ", " + sequenceId + ");");
 			}
 
 			rs.close();
@@ -467,11 +468,11 @@ public class ModelConverter {
 		} 
 		catch (JdbcSQLIntegrityConstraintViolationException e) {
 			//					System.out.println("Primary key constraint violation in table " + newTable);
-			//											e.printStackTrace();
+														e.printStackTrace();
 		}
 		catch (MySQLIntegrityConstraintViolationException e) {
 			//	Workbench.getInstance().error(e);
-//			e.printStackTrace();
+			e.printStackTrace();
 		}
 		catch (CommunicationsException e) {
 
@@ -511,7 +512,7 @@ public class ModelConverter {
 			String newTable = "model_stoichiometry";
 			String oldTable = "stoichiometry";
 			
-			newStatement.execute("DELETE FROM " + newTable + ";");
+//			newStatement.execute("DELETE FROM " + newTable + ";");
 
 			ResultSet rs = oldStatement.executeQuery("SELECT * FROM " + oldTable + ";");
 
@@ -599,7 +600,7 @@ public class ModelConverter {
 			String newTable = "model_module";
 			String oldTable = "module";
 			
-			newStatement.execute("DELETE FROM " + newTable + ";");
+//			newStatement.execute("DELETE FROM " + newTable + ";");
 
 			ResultSet rs = oldStatement.executeQuery("SELECT * FROM " + oldTable + ";");
 			
@@ -671,7 +672,7 @@ public class ModelConverter {
 			String newTable = "model_pathway";
 			String oldTable = "pathway";
 			
-			newStatement.execute("DELETE FROM " + newTable + ";");
+//			newStatement.execute("DELETE FROM " + newTable + ";");
 
 			ResultSet rs = oldStatement.executeQuery("SELECT * FROM " + oldTable + ";");
 			

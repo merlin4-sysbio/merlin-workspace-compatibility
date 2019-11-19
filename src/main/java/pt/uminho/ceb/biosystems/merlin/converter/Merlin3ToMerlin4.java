@@ -23,7 +23,6 @@ import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationExceptio
 import es.uvigo.ei.aibench.workbench.Workbench;
 import jersey.repackaged.com.google.common.collect.Lists;
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Connection;
-import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Enumerators.DatabaseType;
 import pt.uminho.ceb.biosystems.merlin.utilities.DatabaseFilesPaths;
 import pt.uminho.ceb.biosystems.merlin.utilities.io.FileUtils;
 
@@ -66,21 +65,21 @@ public class Merlin3ToMerlin4 {
 			this.changes.firePropertyChange("size", null, total);
 			this.changes.firePropertyChange("message", null, "importing and converting data, this process may take a while");
 
-			logger.info("importing projects table...");
-
-			this.taxId = convertProjects();
-
-			logger.info("importing interpro tables...");
-
-			convertInterpro();
-
-			logger.info("importing model tables...");
-
-			convertModel();
-
-			logger.info("importing compartments tables...");
-
-			convertCompartments();
+//			logger.info("importing projects table...");
+//
+//			this.taxId = convertProjects();
+//
+//			logger.info("importing interpro tables...");
+//
+//			convertInterpro();
+//
+//			logger.info("importing model tables...");
+//
+//			convertModel();
+//
+//			logger.info("importing compartments tables...");
+//
+//			convertCompartments();
 
 			logger.info("importing enzymes tables...");
 
@@ -174,8 +173,6 @@ public class Merlin3ToMerlin4 {
 	 * @throws InterruptedException 
 	 */
 	public void convertModel() throws InterruptedException {
-
-
 
 		for(String newTable : this.modelTables) {
 
@@ -356,8 +353,8 @@ public class Merlin3ToMerlin4 {
 					}
 					else if(newTable.equalsIgnoreCase("model_pathway_has_model_protein")) {
 						//					positions.add(2);
-						positions.add(3);
 						positions.add(1);
+						positions.add(3);
 
 						genericDataRetrieverAndInjectionRespectingOrder("pathway_has_enzyme", newTable, positions, error);
 					}
@@ -625,7 +622,7 @@ public class Merlin3ToMerlin4 {
 //			if(newConnection.getDatabase_type().equals(DatabaseType.H2))
 //				newTable = newTable.toLowerCase();
 
-			newStatement.execute("DELETE FROM " + newTable + ";");
+//			newStatement.execute("DELETE FROM " + newTable + ";");
 
 			ResultSet rs = oldStatement.executeQuery("SELECT * FROM " + oldTable + ";");
 
@@ -693,6 +690,24 @@ public class Merlin3ToMerlin4 {
 			newStatement.close();
 
 		}
+		catch (CommunicationsException e) {
+
+			if(error < LIMIT) {
+
+				logger.error("Communications exception! Retrying...");
+
+				TimeUnit.MINUTES.sleep(1);
+
+				error++;
+
+				this.oldConnection = new Connection(this.oldConnection.getDatabaseAccess());
+				this.newConnection = new Connection(this.newConnection.getDatabaseAccess());
+
+				genericDataRetrieverAndInjection(oldTable, newTable, error);
+			}
+			//					System.out.println("Primary key constraint violation in table " + newTable);
+			//					e.printStackTrace();
+		}
 		catch (SQLException e) {
 
 			if(oldTable.equalsIgnoreCase("protein_complex"))
@@ -719,7 +734,7 @@ public class Merlin3ToMerlin4 {
 //			if(newConnection.getDatabase_type().equals(DatabaseType.H2))
 //				newTable = newTable.toLowerCase();
 
-			newStatement.execute("DELETE FROM " + newTable + ";");
+//			newStatement.execute("DELETE FROM " + newTable + ";");
 
 			ResultSet rs = oldStatement.executeQuery("SELECT * FROM " + oldTable + ";");
 
@@ -755,11 +770,11 @@ public class Merlin3ToMerlin4 {
 					newStatement.execute(query);
 				} catch (JdbcSQLIntegrityConstraintViolationException e) {
 					//					System.out.println("Primary key constraint violation in table " + newTable);
-					//											e.printStackTrace();
+//																e.printStackTrace();
 				}
 				catch (MySQLIntegrityConstraintViolationException e) {
 					//					System.out.println("Primary key constraint violation in table " + newTable);
-					//											e.printStackTrace();
+//																e.printStackTrace();
 				}
 				catch (CommunicationsException e) {
 
@@ -787,6 +802,24 @@ public class Merlin3ToMerlin4 {
 			oldStatement.close();
 			newStatement.close();
 		} 
+		catch (CommunicationsException e) {
+
+			if(error < LIMIT) {
+
+				logger.error("Communications exception! Retrying...");
+
+				TimeUnit.MINUTES.sleep(1);
+
+				error++;
+
+				this.oldConnection = new Connection(this.oldConnection.getDatabaseAccess());
+				this.newConnection = new Connection(this.newConnection.getDatabaseAccess());
+
+				genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
+			}
+			//					System.out.println("Primary key constraint violation in table " + newTable);
+			//					e.printStackTrace();
+		}
 		catch (SQLException e) {
 
 			System.out.println(newTable);
@@ -810,7 +843,7 @@ public class Merlin3ToMerlin4 {
 //			if(newConnection.getDatabase_type().equals(DatabaseType.H2))
 //				newTable = newTable.toLowerCase();
 
-			newStatement.execute("DELETE FROM " + newTable + ";");
+//			newStatement.execute("DELETE FROM " + newTable + ";");
 
 			ResultSet rs = oldStatement.executeQuery("SELECT * FROM " + oldTable + ";");
 
@@ -871,6 +904,24 @@ public class Merlin3ToMerlin4 {
 			oldStatement.close();
 			newStatement.close();
 		} 
+		catch (CommunicationsException e) {
+
+			if(error < LIMIT) {
+
+				logger.error("Communications exception! Retrying...");
+
+				TimeUnit.MINUTES.sleep(1);
+
+				error++;
+
+				this.oldConnection = new Connection(this.oldConnection.getDatabaseAccess());
+				this.newConnection = new Connection(this.newConnection.getDatabaseAccess());
+
+				genericDataRetrieverAndInjectionRespectingOrderAndBitsType(oldTable, newTable, positions, bitsType, error);
+			}
+			//					System.out.println("Primary key constraint violation in table " + newTable);
+			//					e.printStackTrace();
+		}
 		catch (SQLException e) {
 
 			System.out.println(newTable);

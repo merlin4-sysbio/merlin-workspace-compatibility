@@ -82,7 +82,7 @@ public class CompartmentsConverter {
 			while(rs.next())
 				ids.put(rs.getString(1), rs.getInt(2));
 			
-			newStatement.execute("DELETE FROM compartments_annotation_reports;");
+//			newStatement.execute("DELETE FROM compartments_annotation_reports;");
 
 			rs = oldStatement.executeQuery("SELECT locus_tag, compartment_id, score FROM psort_reports INNER JOIN psort_reports_has_compartments "
 					+ "ON psort_reports.id = psort_reports_has_compartments.psort_report_id;");

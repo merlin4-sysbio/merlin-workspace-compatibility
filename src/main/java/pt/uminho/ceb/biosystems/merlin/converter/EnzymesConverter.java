@@ -53,7 +53,7 @@ public class EnzymesConverter {
 //			if(type.equals(DatabaseType.H2))
 //				newTable = "enzymes_annotation_genehomology";
 
-			newStatement.execute("DELETE FROM " + newTable + ";");
+//			newStatement.execute("DELETE FROM " + newTable + ";");
 
 			String homologySetupColumnName = "homologySetup_s_key";
 			String locusTagColumnName = "locusTag";
@@ -155,7 +155,7 @@ public class EnzymesConverter {
 //			if(type.equals(DatabaseType.H2))
 //				newTable = "enzymes_annotation_homologysetup";
 
-			newStatement.execute("DELETE FROM " + newTable + ";");
+//			newStatement.execute("DELETE FROM " + newTable + ";");
 
 			while(rs.next()) {
 

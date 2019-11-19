@@ -33,7 +33,7 @@ public class Projects {
 			Statement oldStatement = oldConnection.createStatement();
 			Statement newStatement = newConnection.createStatement();
 
-			newStatement.execute("DELETE FROM projects;");
+//			newStatement.execute("DELETE FROM projects;");
 
 			DatabaseType type = newConnection.getDatabase_type();
 

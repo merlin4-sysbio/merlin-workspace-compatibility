@@ -94,9 +94,9 @@ public class ConverterGUI implements PropertyChangeListener {
 
 				this.progress.setTime((GregorianCalendar.getInstance().getTimeInMillis() - startTime), 0, this.dataSize, "initializing new database in merlin 4");
 
-				DatabaseServices.generateDatabase(this.newWorkspaceName);
-
-				DatabaseServices.dropConnection(this.newWorkspaceName);
+//				DatabaseServices.generateDatabase(this.newWorkspaceName);
+//
+//				DatabaseServices.dropConnection(this.newWorkspaceName);
 
 				this.merlinDirectoryPath = merlinDirectory.getAbsolutePath().concat("/");
 
