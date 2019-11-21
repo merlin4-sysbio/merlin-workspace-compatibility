@@ -120,6 +120,24 @@ public class ModelConverter {
 			oldStatement2.close();
 			newStatement.close();
 		} 
+		catch (CommunicationsException e) {
+
+			if(error < LIMIT) {
+
+				logger.error("Communications exception! Retrying...");
+
+				TimeUnit.MINUTES.sleep(1);
+
+				error++;
+
+				oldConnection = new Connection(oldConnection.getDatabaseAccess());
+				newConnection = new Connection(newConnection.getDatabaseAccess());
+
+				subunit(oldConnection, newConnection, error);
+			}
+			//					System.out.println("Primary key constraint violation in table " + newTable);
+			//					e.printStackTrace();
+		}
 		catch (SQLException e) {
 			Workbench.getInstance().error(e);
 			e.printStackTrace();
@@ -269,6 +287,24 @@ public class ModelConverter {
 					//					Workbench.getInstance().error(e);
 //					e.printStackTrace();
 				}
+				catch (CommunicationsException e) {
+
+					if(error < LIMIT) {
+
+						logger.error("Communications exception! Retrying...");
+
+						TimeUnit.MINUTES.sleep(1);
+
+						error++;
+
+						oldConnection = new Connection(oldConnection.getDatabaseAccess());
+						newConnection = new Connection(newConnection.getDatabaseAccess());
+
+						reaction(oldConnection, newConnection, error);
+					}
+					//					System.out.println("Primary key constraint violation in table " + newTable);
+					//					e.printStackTrace();
+				}
 
 			}
 
@@ -360,6 +396,24 @@ public class ModelConverter {
 				catch (MySQLIntegrityConstraintViolationException e) {
 					//				Workbench.getInstance().error(e);
 					e.printStackTrace();
+				}
+				catch (CommunicationsException e) {
+
+					if(error < LIMIT) {
+
+						logger.error("Communications exception! Retrying...");
+
+						TimeUnit.MINUTES.sleep(1);
+
+						error++;
+
+						oldConnection = new Connection(oldConnection.getDatabaseAccess());
+						newConnection = new Connection(newConnection.getDatabaseAccess());
+
+						protein(oldConnection, newConnection, error);
+					}
+					//					System.out.println("Primary key constraint violation in table " + newTable);
+					//					e.printStackTrace();
 				}
 
 			}
@@ -579,6 +633,24 @@ public class ModelConverter {
 			oldStatement.close();
 			newStatement.close();
 		} 
+		catch (CommunicationsException e) {
+
+			if(error < LIMIT) {
+				
+				logger.error("Communications exception! Retrying...");
+
+				TimeUnit.MINUTES.sleep(1);
+
+				error++;
+				
+				oldConnection = new Connection(oldConnection.getDatabaseAccess());
+				newConnection = new Connection(newConnection.getDatabaseAccess());
+				
+				stoichiometry(oldConnection, newConnection, positions, error);
+			}
+			//					System.out.println("Primary key constraint violation in table " + newTable);
+			//					e.printStackTrace();
+		}
 		catch (SQLException e) {
 
 			Workbench.getInstance().error(e);
@@ -651,6 +723,24 @@ public class ModelConverter {
 			oldStatement.close();
 			newStatement.close();
 		} 
+		catch (CommunicationsException e) {
+
+			if(error < LIMIT) {
+				
+				logger.error("Communications exception! Retrying...");
+
+				TimeUnit.MINUTES.sleep(1);
+
+				error++;
+				
+				oldConnection = new Connection(oldConnection.getDatabaseAccess());
+				newConnection = new Connection(newConnection.getDatabaseAccess());
+				
+				module(oldConnection, newConnection, error);
+			}
+			//					System.out.println("Primary key constraint violation in table " + newTable);
+			//					e.printStackTrace();
+		}
 		catch (SQLException e) {
 
 			Workbench.getInstance().error(e);
@@ -748,6 +838,24 @@ public class ModelConverter {
 			oldStatement.close();
 			newStatement.close();
 		} 
+		catch (CommunicationsException e) {
+
+			if(error < LIMIT) {
+				
+				logger.error("Communications exception! Retrying...");
+
+				TimeUnit.MINUTES.sleep(1);
+
+				error++;
+				
+				oldConnection = new Connection(oldConnection.getDatabaseAccess());
+				newConnection = new Connection(newConnection.getDatabaseAccess());
+				
+				pathway(oldConnection, newConnection, positions, error);
+			}
+			//					System.out.println("Primary key constraint violation in table " + newTable);
+			//					e.printStackTrace();
+		}
 		catch (SQLException e) {
 
 			Workbench.getInstance().error(e);

@@ -129,10 +129,29 @@ public class EnzymesConverter {
 			oldStatement2.close();
 			newStatement.close();
 		} 
+		catch (CommunicationsException e) {
+
+			if(error < LIMIT) {
+				
+				logger.error("Communications exception! Retrying...");
+
+				TimeUnit.MINUTES.sleep(1);
+
+				error++;
+				
+				oldConnection = new Connection(oldConnection.getDatabaseAccess());
+				newConnection = new Connection(newConnection.getDatabaseAccess());
+				
+				geneHomology(oldConnection, newConnection, error);
+			}
+			//					System.out.println("Primary key constraint violation in table " + newTable);
+			//					e.printStackTrace();
+		}
 		catch (SQLException e) {
 			Workbench.getInstance().error(e);
 			e.printStackTrace();
 		}
+		
 	}
 	
 	/**
@@ -206,6 +225,24 @@ public class EnzymesConverter {
 			oldStatement.close();
 			newStatement.close();
 		} 
+		catch (CommunicationsException e) {
+
+			if(error < LIMIT) {
+				
+				logger.error("Communications exception! Retrying...");
+
+				TimeUnit.MINUTES.sleep(1);
+
+				error++;
+				
+				oldConnection = new Connection(oldConnection.getDatabaseAccess());
+				newConnection = new Connection(newConnection.getDatabaseAccess());
+				
+				homologySetup(oldConnection, newConnection, error);
+			}
+			//					System.out.println("Primary key constraint violation in table " + newTable);
+			//					e.printStackTrace();
+		}
 		catch (SQLException e) {
 			Workbench.getInstance().error(e);
 			e.printStackTrace();
