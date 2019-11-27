@@ -65,21 +65,21 @@ public class Merlin3ToMerlin4 {
 			this.changes.firePropertyChange("size", null, total);
 			this.changes.firePropertyChange("message", null, "importing and converting data, this process may take a while");
 
-			logger.info("importing projects table...");
-
-			this.taxId = convertProjects();
-
-			logger.info("importing interpro tables...");
-
-			convertInterpro();
-
-			logger.info("importing model tables...");
-
-			convertModel();
-
-			logger.info("importing compartments tables...");
-
-			convertCompartments();
+//			logger.info("importing projects table...");
+//
+//			this.taxId = convertProjects();
+//
+//			logger.info("importing interpro tables...");
+//
+//			convertInterpro();
+//
+//			logger.info("importing model tables...");
+//
+//			convertModel();
+//
+//			logger.info("importing compartments tables...");
+//
+//			convertCompartments();
 
 			logger.info("importing enzymes tables...");
 
