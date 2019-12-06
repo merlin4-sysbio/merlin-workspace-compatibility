@@ -65,21 +65,21 @@ public class Merlin3ToMerlin4 {
 			this.changes.firePropertyChange("size", null, total);
 			this.changes.firePropertyChange("message", null, "importing and converting data, this process may take a while");
 
-//			logger.info("importing projects table...");
-//
-//			this.taxId = convertProjects();
-//
-//			logger.info("importing interpro tables...");
-//
-//			convertInterpro();
-//
-//			logger.info("importing model tables...");
-//
-//			convertModel();
-//
-//			logger.info("importing compartments tables...");
-//
-//			convertCompartments();
+			logger.info("importing projects table...");
+
+			this.taxId = convertProjects();
+
+			logger.info("importing interpro tables...");
+
+			convertInterpro();
+
+			logger.info("importing model tables...");
+
+			convertModel();
+
+			logger.info("importing compartments tables...");
+
+			convertCompartments();
 
 			logger.info("importing enzymes tables...");
 
@@ -190,24 +190,10 @@ public class Merlin3ToMerlin4 {
 					String oldTable = newTable.replace("model_", "");
 
 					if(newTable.equalsIgnoreCase("model_gene")) {
-						positions.add(1);
-						positions.add(7);
-						positions.add(5);
-						positions.add(3);
-						positions.add(2);
-						positions.add(8);
-						positions.add(9);
-						positions.add(6);
-						positions.add(4);
 
-						genericDataRetrieverAndInjectionRespectingOrder(oldTable, newTable, positions, error);
+						ModelConverter.gene(oldConnection, newConnection, error);
 					}
 					else if(newTable.equalsIgnoreCase("model_sequence")) {
-						positions.add(1);
-						positions.add(4);
-						positions.add(5);
-						positions.add(3);
-						positions.add(2);
 
 						ModelConverter.sequence(oldConnection, newConnection, error);
 					}

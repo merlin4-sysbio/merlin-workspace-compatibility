@@ -367,14 +367,16 @@ public class ModelConverter {
 					String ec = null;
 					String source = null;
 					Integer inModel = null;
+					
+					String inModelColumnName = "inModel";
 
 					if(rs2.next()) {
-						ec = str(rs2.getString(1), type);
-						source = str(rs2.getString(4), type);
-						inModel = rs2.getInt(3);
+						ec = str(rs2.getString("ecnumber"), type);
+						source = str(rs2.getString("source"), type);
+						inModel = rs2.getInt(inModelColumnName);
 					}
 
-					String inModelColumnName = "inModel";
+					
 
 //					if(newConnection.getDatabase_type().equals(DatabaseType.H2))
 //						inModelColumnName = "inmodel";
@@ -747,6 +749,96 @@ public class ModelConverter {
 			e.printStackTrace();
 		}
 	}
+	
+	/**
+	 * @param oldTable
+	 * @param newTable
+	 * @throws InterruptedException 
+	 */
+	public static void gene(Connection oldConnection, Connection newConnection, int error) throws InterruptedException {
+
+		try {
+			Statement oldStatement = oldConnection.createStatement();
+			Statement newStatement = newConnection.createStatement();
+
+			String newTable = "model_gene";
+			String oldTable = "gene";
+
+			ResultSet rs = oldStatement.executeQuery("SELECT * FROM " + oldTable + ";");
+			
+			DatabaseType type = oldConnection.getDatabase_type();
+
+			while(rs.next()) {
+
+				try {
+					String query = "INSERT INTO " + newTable + " (idgene, boolean_rule, left_end_position, locusTag, name, origin, query, right_end_position, transcription_direction) VALUES ("
+							+ rs.getInt("idgene") + "," + str(rs.getString("boolean_rule"), type)+ "," + str(rs.getString("left_end_position"), type)+ "," + str(rs.getString("locusTag"), type)+ ","
+									 + str(rs.getString("name"), type)+ "," + str(rs.getString("origin"), type)+ "," + str(rs.getString("sequence_id"), type)+ "," + str(rs.getString("right_end_position"), type)+
+									 "," + str(rs.getString("right_end_position"), type) + ");";
+
+
+//											System.out.println(query);
+
+					newStatement.execute(query);
+				} catch (JdbcSQLIntegrityConstraintViolationException e) {
+					//					System.out.println("Primary key constraint violation in table " + newTable);
+					//											e.printStackTrace();
+				}
+				catch (MySQLIntegrityConstraintViolationException e) {
+					//					System.out.println("Primary key constraint violation in table " + newTable);
+					//											e.printStackTrace();
+				}
+				catch (CommunicationsException e) {
+
+					if(error < LIMIT) {
+						
+						logger.error("Communications exception! Retrying...");
+
+						TimeUnit.MINUTES.sleep(1);
+
+						error++;
+						
+						oldConnection = new Connection(oldConnection.getDatabaseAccess());
+						newConnection = new Connection(newConnection.getDatabaseAccess());
+						
+						gene(oldConnection, newConnection, error);
+					}
+					//					System.out.println("Primary key constraint violation in table " + newTable);
+					//					e.printStackTrace();
+				}
+				//				}
+			}
+
+			rs.close();
+
+			oldStatement.close();
+			newStatement.close();
+		} 
+		catch (CommunicationsException e) {
+
+			if(error < LIMIT) {
+				
+				logger.error("Communications exception! Retrying...");
+
+				TimeUnit.MINUTES.sleep(1);
+
+				error++;
+				
+				oldConnection = new Connection(oldConnection.getDatabaseAccess());
+				newConnection = new Connection(newConnection.getDatabaseAccess());
+				
+				gene(oldConnection, newConnection, error);
+			}
+			//					System.out.println("Primary key constraint violation in table " + newTable);
+			//					e.printStackTrace();
+		}
+		catch (SQLException e) {
+
+			Workbench.getInstance().error(e);
+			e.printStackTrace();
+		}
+	}
+	
 	
 	/**
 	 * @param oldTable
