@@ -16,9 +16,11 @@
 		<maven.compiler.target>1.8</maven.compiler.target>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.build.timestamp.format>yyyy</maven.build.timestamp.format>
-		<pt.uminho.ceb.biosystems.merlin.version>4.0.1-SNAPSHOT</pt.uminho.ceb.biosystems.merlin.version>
-		<merlin.plugins.directory>${project.basedir}/../merlin-aibench/plugins</merlin.plugins.directory>
+		<pt.uminho.ceb.biosystems.merlin.version>4.0.2-RELEASE</pt.uminho.ceb.biosystems.merlin.version>
+		<pt.uminho.ceb.biosystems.merlin.groupId>pt.uminho.ceb.biosystems.merlin</pt.uminho.ceb.biosystems.merlin.groupId>
 		<merlin.plugins.artifactIds>merlin-databaseConnector</merlin.plugins.artifactIds>
+		<merlin.plugins.directory>${project.basedir}/../merlin-project/merlin-gui/plugins</merlin.plugins.directory>
+		<merlin.plugins_bin.directory>${project.basedir}/../merlin-project/merlin-gui/plugins_bin/merlin-workspace-compatibility</merlin.plugins_bin.directory>
 	</properties>
 
 	<repositories>
@@ -52,7 +54,7 @@
 						</goals>
 						<configuration>
 							<!-- <outputDirectory>../merlin-core/plugins_bin/merlin-draft-reconstruction</outputDirectory> -->
-							<outputDirectory>../merlin-aibench/plugins_bin/merlin-workspace-compatibility</outputDirectory>
+							<outputDirectory>${merlin.plugins_bin.directory}</outputDirectory>
 							<resources>
 								<resource>
 									<directory>target/classes</directory>
@@ -110,8 +112,8 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>pt.uminho.ceb.biosystems.merlin</groupId>
-			<artifactId>merlin-aibench</artifactId>
+			<groupId>${pt.uminho.ceb.biosystems.merlin.groupId}</groupId>
+			<artifactId>merlin-gui</artifactId>
 			<version>${pt.uminho.ceb.biosystems.merlin.version}</version>
 		</dependency>
 		<dependency>
