@@ -381,9 +381,9 @@ public class ModelConverter {
 //					if(newConnection.getDatabase_type().equals(DatabaseType.H2))
 //						inModelColumnName = "inmodel";
 
-					String query = "INSERT INTO model_protein (idprotein, class, ecnumber, " + inModelColumnName + ", inchi, molecular_weight, molecular_weight_exp, "
+					String query = "INSERT INTO model_protein (idprotein, class, ecnumber, inchi, molecular_weight, molecular_weight_exp, "
 							+ "molecular_weight_kd, molecular_weight_seq, name, pi, source)  VALUES (" + proteinId + ", " + str(rs.getString(3), type) 
-							+ ", " + ec + ", " + inModel + ", " + str(rs.getString(4), type) + ", " + str(rs.getString(5), type) + ", "
+							+ ", " + ec + ", " + str(rs.getString(4), type) + ", " + str(rs.getString(5), type) + ", "
 							+ str(rs.getString(6), type) + ", " + str(rs.getString(7), type) + ", " + str(rs.getString(8), type) + ", " + str(rs.getString(2), type) 
 							+ ", " + str(rs.getString(9), type) + ", " + source + ");";
 
